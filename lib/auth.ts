@@ -104,3 +104,15 @@ export async function requireStaff(
   }
   return user.staff;
 }
+
+/**
+ * For Server Actions: the signed-in staff member if their role is allowed,
+ * otherwise null (the action then returns an error instead of redirecting).
+ */
+export async function getActionStaff(
+  allowed: readonly StaffRole[],
+): Promise<StaffUser | null> {
+  const user = await getSignedInUser();
+  if (!user?.staff || !allowed.includes(user.staff.role)) return null;
+  return user.staff;
+}

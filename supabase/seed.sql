@@ -86,3 +86,10 @@ values
    'a0000000-0000-4000-8000-000000000011', 'Front counter till', 'till', 'T1', null),
   ('30000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001',
    'a0000000-0000-4000-8000-000000000012', 'Kitchen display', 'kds', 'K1', null);
+
+-- ---------------------------------------------------------------------------
+-- Taxes (sample; real rates are set by an admin)
+-- ---------------------------------------------------------------------------
+
+insert into public.taxes (name, rate_bps, is_inclusive, tax_category, sort_order)
+values ('Sales tax', 1000, false, 'standard', 10);

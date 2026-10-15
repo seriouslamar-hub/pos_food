@@ -68,13 +68,11 @@ test.describe("till", () => {
 
   test("the till locks itself when idle", async ({ page }) => {
     // 0.05 minutes = 3 seconds, for this branch only.
-    await localAdmin()
-      .from("settings")
-      .insert({
-        branch_id: SEED.branchId,
-        key: "till.auto_lock_minutes",
-        value: 0.05,
-      });
+    await localAdmin().from("settings").insert({
+      branch_id: SEED.branchId,
+      key: "till.auto_lock_minutes",
+      value: 0.05,
+    });
     await page.reload();
     await waitForHydration(page);
 

@@ -42,6 +42,14 @@ export function TillApp({
     sessionIdRef.current = session?.sessionId ?? null;
   }, [session]);
 
+  // Tell head office this till is online (shown on the admin devices page).
+  useEffect(() => {
+    const beat = () => void supabase.rpc("device_heartbeat");
+    beat();
+    const timer = setInterval(beat, 60_000);
+    return () => clearInterval(timer);
+  }, [supabase]);
+
   const lock = useCallback(
     (reason?: string) => {
       const sessionId = sessionIdRef.current;

@@ -13,6 +13,7 @@ import { getSignedInUser } from "@/lib/auth";
 import { deviceHome } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 import { DeviceSetupForm, type SetupDevice } from "./device-setup-form";
+import { SetupCodeForm } from "./setup-code-form";
 
 export const metadata: Metadata = { title: "Device setup" };
 
@@ -71,14 +72,26 @@ async function DeviceSetup() {
   const staff = user?.staff;
   if (!staff) {
     return (
-      <div className="flex flex-col gap-4">
-        <p>An admin or manager needs to sign in to set up this device.</p>
-        <Link
-          href="/login?next=/device/setup"
-          className={buttonVariants({ size: "touch", className: "self-start" })}
-        >
-          Sign in
-        </Link>
+      <div className="flex flex-col gap-6">
+        <SetupCodeForm />
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <span className="h-px flex-1 bg-border" />
+          or
+          <span className="h-px flex-1 bg-border" />
+        </div>
+        <div className="flex flex-col gap-3">
+          <p>An admin or manager can sign in here and choose the device.</p>
+          <Link
+            href="/login?next=/device/setup"
+            className={buttonVariants({
+              size: "touch",
+              variant: "outline",
+              className: "self-start",
+            })}
+          >
+            Sign in
+          </Link>
+        </div>
       </div>
     );
   }

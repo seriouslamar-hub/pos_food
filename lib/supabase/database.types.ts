@@ -131,6 +131,45 @@ export type Database = {
         }
         Relationships: []
       }
+      device_setup_codes: {
+        Row: {
+          code_hash: string
+          created_at: string
+          created_by_staff_id: string | null
+          device_id: string
+          expires_at: string
+        }
+        Insert: {
+          code_hash: string
+          created_at?: string
+          created_by_staff_id?: string | null
+          device_id: string
+          expires_at: string
+        }
+        Update: {
+          code_hash?: string
+          created_at?: string
+          created_by_staff_id?: string | null
+          device_id?: string
+          expires_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_setup_codes_created_by_staff_id_fkey"
+            columns: ["created_by_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_setup_codes_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: true
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       devices: {
         Row: {
           auth_user_id: string | null
@@ -245,6 +284,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_methods: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          name: string
+          requires_reference: boolean
+          sort_order: number
+          type: Database["public"]["Enums"]["payment_method_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          name: string
+          requires_reference?: boolean
+          sort_order?: number
+          type: Database["public"]["Enums"]["payment_method_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          name?: string
+          requires_reference?: boolean
+          sort_order?: number
+          type?: Database["public"]["Enums"]["payment_method_type"]
+          updated_at?: string
+        }
+        Relationships: []
       }
       pin_attempts: {
         Row: {
@@ -430,6 +502,42 @@ export type Database = {
           },
         ]
       }
+      taxes: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          is_inclusive: boolean
+          name: string
+          rate_bps: number
+          sort_order: number
+          tax_category: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_inclusive?: boolean
+          name: string
+          rate_bps: number
+          sort_order?: number
+          tax_category?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_inclusive?: boolean
+          name?: string
+          rate_bps?: number
+          sort_order?: number
+          tax_category?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -497,6 +605,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["staff_role"]
       }
+      device_heartbeat: { Args: never; Returns: undefined }
       end_pos_session: { Args: { p_session_id: string }; Returns: undefined }
       find_staff_by_pin: {
         Args: { p_branch_id: string; p_pin: string }
@@ -523,6 +632,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      set_staff_login: {
+        Args: { p_auth_user_id: string; p_staff_id: string }
+        Returns: undefined
       }
       set_staff_pin: {
         Args: { p_pin: string; p_staff_id: string }
@@ -562,6 +675,7 @@ export type Database = {
     }
     Enums: {
       device_type: "till" | "kds" | "pickup" | "kiosk"
+      payment_method_type: "cash" | "card" | "mobile_money" | "other"
       staff_role: "admin" | "manager" | "cashier"
     }
     CompositeTypes: {
@@ -691,6 +805,7 @@ export const Constants = {
   public: {
     Enums: {
       device_type: ["till", "kds", "pickup", "kiosk"],
+      payment_method_type: ["cash", "card", "mobile_money", "other"],
       staff_role: ["admin", "manager", "cashier"],
     },
   },

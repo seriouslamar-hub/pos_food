@@ -24,16 +24,23 @@ async function ManagerHome() {
       intro="Your branch: the business day, shifts, cash, stock and reports."
       sections={[
         {
-          title: "Device setup",
-          description:
-            "Turn this browser into a till, kitchen display or pickup screen.",
-          phase: "Phase 2",
-          href: "/device/setup",
-        },
-        {
           title: "Cashiers",
           description: "Add and deactivate cashiers, and reset their PINs.",
           phase: "Phase 3",
+          href: "/manager/staff",
+        },
+        {
+          title: "Audit log",
+          description: "Changes and sensitive actions in your branch.",
+          phase: "Phase 3",
+          href: "/manager/audit",
+        },
+        {
+          title: "Device setup",
+          description:
+            "Turn this browser into a till, kitchen display or pickup board.",
+          phase: "Phase 2",
+          href: "/device/setup",
         },
         {
           title: "Availability",
@@ -45,11 +52,6 @@ async function ManagerHome() {
           description:
             "Open and close the day, reconcile cash and print Z reports.",
           phase: "Phase 7",
-        },
-        {
-          title: "Inventory",
-          description: "Deliveries, stock counts, waste and transfers.",
-          phase: "Phase 11",
         },
         {
           title: "Reports",

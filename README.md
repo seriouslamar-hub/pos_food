@@ -120,9 +120,16 @@ Add these secrets in GitHub → your repo → Settings → Secrets and variables
 
 - **Admins and managers** sign in at `/login` with email and password. Admins land on `/admin`, managers on `/manager`. Cashiers, devices and deactivated staff are refused.
 - **The first admin** of a new project is created with `npm run admin:create -- --email you@example.com --name "Your Name"`. It prints a temporary password once. After that, admins create staff from the back office (Phase 3).
-- **Tills, kitchen displays and pickup boards** are set up at `/device/setup`. An admin or manager signs in, picks the branch and device, and the browser is signed in as that device with a one-time token (devices have no password). It stays signed in after restarts.
+- **Tills, kitchen displays and pickup boards** are set up at `/device/setup`. Either enter the one-time setup code an admin got when creating the device (valid 24 hours, works once), or have an admin or manager sign in there and pick the device. The browser is then signed in as the device with a one-time token (devices have no password) and stays signed in after restarts. Admins can sign a lost device out everywhere from its page.
 - **Cashiers** tap their 4–6 digit PIN on the till. Five wrong PINs within 5 minutes lock the till for a minute. The till locks itself after `till.auto_lock_minutes` without activity (default 5).
 - **Manager approval:** when a cashier lacks a permission, the till asks for the PIN of someone who has it. The approval lasts 2 minutes, works once, and every attempt is written to the audit log.
+
+## Back office
+
+- **Admins** (`/admin`) manage branches (with logos), staff, devices, taxes, payment methods, the role permission grid, settings (global defaults with per-branch values) and the audit log.
+- **Managers** (`/manager`) add, edit and deactivate cashiers in their own branch, set their PINs, and read their branch's audit log. They can't give a cashier a bigger discount limit than their own.
+- Creating an admin or manager makes their login and shows a temporary password once. There is always at least one active admin.
+- Reactivating someone or moving them to another branch clears their PIN, because it might now clash with a colleague's.
 
 ## End-to-end tests
 
