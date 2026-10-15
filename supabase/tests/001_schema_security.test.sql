@@ -72,6 +72,7 @@ select is(
     'device_heartbeat',
     'end_pos_session',
     'get_menu',
+    'get_order',
     'has_permission',
     'is_admin',
     'is_device',
@@ -83,6 +84,7 @@ select is(
     'set_staff_login',
     'set_staff_pin',
     'start_pos_session',
+    'submit_order',
     'verify_override'
   ],
   'authenticated can execute only the allowed API functions'

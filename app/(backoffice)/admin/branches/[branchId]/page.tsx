@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { AdminPage, PageHeader, PageSkeleton } from "@/components/admin/page";
 import { requireStaff } from "@/lib/auth";
 import { currencyOptions, timezoneOptions } from "@/lib/intl-options";
+import { getMenuCurrency } from "@/lib/menu.server";
 import { createClient } from "@/lib/supabase/server";
 import { BranchForm } from "../branch-form";
 import { LogoUploader } from "../logo-uploader";
@@ -36,6 +37,7 @@ async function EditBranch({
     .eq("id", branchId)
     .maybeSingle();
   if (!branch) notFound();
+  const menuCurrency = await getMenuCurrency(supabase);
 
   return (
     <AdminPage>
@@ -63,6 +65,7 @@ async function EditBranch({
           }}
           timezones={timezoneOptions(branch.timezone)}
           currencies={currencyOptions()}
+          menuCurrency={menuCurrency}
         />
       </section>
     </AdminPage>

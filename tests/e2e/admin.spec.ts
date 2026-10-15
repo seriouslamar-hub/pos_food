@@ -194,6 +194,8 @@ test.describe("admin back office", () => {
     await open(page, "/admin/taxes/new");
     await page.getByLabel("Name").fill(`Levy ${RUN}`);
     await page.getByLabel("Rate (%)").fill("2.5");
+    // Its own tax category, so it doesn't change prices in other tests.
+    await page.getByLabel("Tax category").fill(`e2e_${RUN}`);
     await page.getByRole("button", { name: "Add tax" }).click();
     await expect(page).toHaveURL(/\/admin\/taxes\?notice=created/);
     await expect(

@@ -612,6 +612,285 @@ export type Database = {
           },
         ]
       }
+      order_counters: {
+        Row: {
+          branch_id: string
+          counter_date: string
+          last_number: number
+        }
+        Insert: {
+          branch_id: string
+          counter_date: string
+          last_number?: number
+        }
+        Update: {
+          branch_id?: string
+          counter_date?: string
+          last_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_counters_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          approved_by: string | null
+          branch_id: string
+          combo_slot_name: string | null
+          created_at: string
+          id: string
+          kds_station_id: string | null
+          line_discount: number
+          line_subtotal: number
+          line_tax: number
+          line_total: number
+          menu_item_id: string
+          modifiers: Json
+          name_snapshot: string
+          notes: string | null
+          order_id: string
+          parent_item_id: string | null
+          quantity: number
+          short_name_snapshot: string
+          sort_order: number
+          status: Database["public"]["Enums"]["order_item_status"]
+          taxes: Json
+          unit_price: number
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          branch_id: string
+          combo_slot_name?: string | null
+          created_at?: string
+          id: string
+          kds_station_id?: string | null
+          line_discount?: number
+          line_subtotal?: number
+          line_tax?: number
+          line_total?: number
+          menu_item_id: string
+          modifiers?: Json
+          name_snapshot: string
+          notes?: string | null
+          order_id: string
+          parent_item_id?: string | null
+          quantity: number
+          short_name_snapshot: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["order_item_status"]
+          taxes?: Json
+          unit_price: number
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          branch_id?: string
+          combo_slot_name?: string | null
+          created_at?: string
+          id?: string
+          kds_station_id?: string | null
+          line_discount?: number
+          line_subtotal?: number
+          line_tax?: number
+          line_total?: number
+          menu_item_id?: string
+          modifiers?: Json
+          name_snapshot?: string
+          notes?: string | null
+          order_id?: string
+          parent_item_id?: string | null
+          quantity?: number
+          short_name_snapshot?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["order_item_status"]
+          taxes?: Json
+          unit_price?: number
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_kds_station_id_fkey"
+            columns: ["kds_station_id"]
+            isOneToOne: false
+            referencedRelation: "kds_stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_parent_item_id_fkey"
+            columns: ["parent_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_voided_by_fkey"
+            columns: ["voided_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          branch_id: string
+          business_date: string
+          channel: Database["public"]["Enums"]["order_channel"]
+          client_created_at: string | null
+          collected_at: string | null
+          created_at: string
+          customer_id: string | null
+          customer_phone: string | null
+          delivery_address: string | null
+          device_id: string | null
+          discount_total: number
+          id: string
+          is_offline: boolean
+          notes: string | null
+          order_number: string
+          order_type: Database["public"]["Enums"]["order_type"]
+          paid_at: string | null
+          pos_session_id: string | null
+          ready_at: string | null
+          sent_to_kitchen_at: string | null
+          shift_id: string | null
+          staff_id: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          tax_total: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          business_date: string
+          channel?: Database["public"]["Enums"]["order_channel"]
+          client_created_at?: string | null
+          collected_at?: string | null
+          created_at?: string
+          customer_id?: string | null
+          customer_phone?: string | null
+          delivery_address?: string | null
+          device_id?: string | null
+          discount_total?: number
+          id: string
+          is_offline?: boolean
+          notes?: string | null
+          order_number: string
+          order_type?: Database["public"]["Enums"]["order_type"]
+          paid_at?: string | null
+          pos_session_id?: string | null
+          ready_at?: string | null
+          sent_to_kitchen_at?: string | null
+          shift_id?: string | null
+          staff_id?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal?: number
+          tax_total?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          business_date?: string
+          channel?: Database["public"]["Enums"]["order_channel"]
+          client_created_at?: string | null
+          collected_at?: string | null
+          created_at?: string
+          customer_id?: string | null
+          customer_phone?: string | null
+          delivery_address?: string | null
+          device_id?: string | null
+          discount_total?: number
+          id?: string
+          is_offline?: boolean
+          notes?: string | null
+          order_number?: string
+          order_type?: Database["public"]["Enums"]["order_type"]
+          paid_at?: string | null
+          pos_session_id?: string | null
+          ready_at?: string | null
+          sent_to_kitchen_at?: string | null
+          shift_id?: string | null
+          staff_id?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal?: number
+          tax_total?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_pos_session_id_fkey"
+            columns: ["pos_session_id"]
+            isOneToOne: false
+            referencedRelation: "pos_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       override_approvals: {
         Row: {
           approved_by_staff_id: string
@@ -1004,11 +1283,29 @@ export type Database = {
         Returns: string
       }
       get_menu: { Args: { p_branch_id: string }; Returns: Json }
+      get_order: { Args: { p_order_id: string }; Returns: Json }
       has_permission: { Args: { p_permission: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_device: { Args: never; Returns: boolean }
       is_manager: { Args: never; Returns: boolean }
+      line_taxes: {
+        Args: { p_gross: number; p_tax_category: string }
+        Returns: Json
+      }
       load_sample_menu: { Args: never; Returns: undefined }
+      order_line_combo: {
+        Args: { p_branch_id: string; p_combo_id: string; p_selections: Json }
+        Returns: Json
+      }
+      order_line_modifiers: {
+        Args: {
+          p_branch_id: string
+          p_menu_item_id: string
+          p_modifier_ids: Json
+        }
+        Returns: Json
+      }
+      order_summary: { Args: { p_order_id: string }; Returns: Json }
       pin_lockout_seconds: { Args: { p_device_id: string }; Returns: number }
       reorder_menu: {
         Args: { p_ids: string[]; p_kind: string; p_parent_id?: string }
@@ -1030,6 +1327,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      round_div: {
+        Args: { p_denominator: number; p_numerator: number }
+        Returns: number
       }
       set_availability: {
         Args: {
@@ -1058,6 +1359,10 @@ export type Database = {
       }
       staff_permissions: { Args: { p_staff_id: string }; Returns: string[] }
       start_pos_session: { Args: { p_pin: string }; Returns: Json }
+      submit_order: {
+        Args: { p_order: Json; p_session_id: string }
+        Returns: Json
+      }
       verify_override: {
         Args: {
           p_permission: string
@@ -1087,6 +1392,18 @@ export type Database = {
     Enums: {
       device_type: "till" | "kds" | "pickup" | "kiosk"
       menu_item_type: "item" | "combo"
+      order_channel: "counter" | "kiosk" | "online" | "drive_thru"
+      order_item_status: "pending" | "sent" | "ready" | "voided"
+      order_status:
+        | "open"
+        | "paid"
+        | "in_kitchen"
+        | "ready"
+        | "collected"
+        | "voided"
+        | "refunded"
+        | "partially_refunded"
+      order_type: "dine_in" | "takeaway" | "delivery"
       payment_method_type: "cash" | "card" | "mobile_money" | "other"
       staff_role: "admin" | "manager" | "cashier"
     }
@@ -1218,6 +1535,19 @@ export const Constants = {
     Enums: {
       device_type: ["till", "kds", "pickup", "kiosk"],
       menu_item_type: ["item", "combo"],
+      order_channel: ["counter", "kiosk", "online", "drive_thru"],
+      order_item_status: ["pending", "sent", "ready", "voided"],
+      order_status: [
+        "open",
+        "paid",
+        "in_kitchen",
+        "ready",
+        "collected",
+        "voided",
+        "refunded",
+        "partially_refunded",
+      ],
+      order_type: ["dine_in", "takeaway", "delivery"],
       payment_method_type: ["cash", "card", "mobile_money", "other"],
       staff_role: ["admin", "manager", "cashier"],
     },

@@ -23,11 +23,14 @@ export function BranchForm({
   initial,
   timezones,
   currencies,
+  menuCurrency,
 }: {
   branchId?: string;
   initial: BranchFormValues;
   timezones: string[];
   currencies: Option[];
+  /** The currency menu prices are in (null before the first branch exists). */
+  menuCurrency: string | null;
 }) {
   const fid = useFieldIds();
   const router = useRouter();
@@ -108,6 +111,13 @@ export function BranchForm({
           id={fid("currencyCode")}
           label="Currency"
           error={errors.currencyCode}
+          hint={
+            menuCurrency &&
+            values.currencyCode &&
+            values.currencyCode !== menuCurrency
+              ? `Menu prices are in ${menuCurrency}. Branches share one menu, so they should use the same currency.`
+              : undefined
+          }
         >
           <Select
             id={fid("currencyCode")}

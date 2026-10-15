@@ -44,6 +44,7 @@ async function Till() {
   return (
     <TillApp
       branchId={user.device.branchId}
+      deviceId={user.device.id}
       deviceName={user.device.name}
       deviceCode={user.device.code}
       branchName={branch?.name ?? ""}

@@ -2,9 +2,8 @@
 
 import { LockIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ManagerOverride } from "@/components/manager-override";
 import { PinKeypad } from "@/components/pin-keypad";
-import { MenuGrid } from "@/components/till/menu-grid";
+import { OrderScreen } from "@/components/till/order-screen";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,16 +13,12 @@ import {
   pinFailureMessage,
   type TillSession,
 } from "@/lib/till";
-import {
-  TillSessionProvider,
-  usePermission,
-  useTillSession,
-} from "@/lib/till-session";
+import { TillSessionProvider } from "@/lib/till-session";
 import { useIdleTimer } from "@/lib/use-idle-timer";
-import { useLiveMenu } from "@/lib/use-live-menu";
 
 type TillAppProps = {
   branchId: string;
+  deviceId: string;
   deviceName: string;
   deviceCode: string;
   branchName: string;
@@ -32,6 +27,7 @@ type TillAppProps = {
 
 export function TillApp({
   branchId,
+  deviceId,
   deviceName,
   deviceCode,
   branchName,
@@ -88,7 +84,7 @@ export function TillApp({
 
       {session ? (
         <TillSessionProvider session={session} lock={lock}>
-          <TillHome branchId={branchId} />
+          <OrderScreen branchId={branchId} deviceId={deviceId} />
         </TillSessionProvider>
       ) : (
         <LockScreen
@@ -203,75 +199,6 @@ function LockScreen({
         onSubmit={signIn}
         disabled={lockedFor > 0}
         submitLabel="Sign in"
-      />
-    </main>
-  );
-}
-
-/** Stand-in for the order screen (Phase 5). Shows the override flow working. */
-function TillHome({ branchId }: { branchId: string }) {
-  const { session } = useTillSession();
-  const canNoSale = usePermission("drawer.no_sale");
-  const { menu, error } = useLiveMenu(branchId);
-  const [overrideOpen, setOverrideOpen] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
-
-  function noSale() {
-    setResult(null);
-    if (canNoSale) {
-      setResult(
-        "Allowed. The drawer will open here once cash management is built (Phase 7).",
-      );
-    } else {
-      setOverrideOpen(true);
-    }
-  }
-
-  return (
-    <main className="flex min-h-0 flex-1 flex-col gap-4 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-muted-foreground">
-          Hello, {session.staff.fullName.split(" ")[0]}. Taking orders arrives
-          in Phase 5; the menu below updates live.
-        </p>
-        <Button size="touch" variant="secondary" onClick={noSale}>
-          No sale (open drawer)
-        </Button>
-      </div>
-
-      {result ? (
-        <Alert aria-live="polite" className="max-w-xl">
-          <AlertDescription
-            className="text-base"
-            data-testid="till-action-result"
-          >
-            {result}
-          </AlertDescription>
-        </Alert>
-      ) : null}
-
-      {error ? (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      ) : null}
-      {menu ? (
-        <MenuGrid menu={menu} />
-      ) : (
-        <p className="text-muted-foreground">Loading the menu…</p>
-      )}
-
-      <ManagerOverride
-        open={overrideOpen}
-        onOpenChange={setOverrideOpen}
-        permission="drawer.no_sale"
-        actionLabel="Opening the drawer without a sale"
-        requireReason
-        onApproved={(approval) =>
-          setResult(
-            `Approved by ${approval.approverName}. The drawer will open here once cash management is built (Phase 7).`,
-          )
-        }
       />
     </main>
   );
