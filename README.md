@@ -27,12 +27,24 @@ npm run dev                     # http://localhost:3000
 npm run db:start                # starts Postgres, Auth, Studio etc. in Docker
 ```
 
-`db:start` prints a local API URL and anon key. Put them in `.env.local`. Supabase Studio runs at http://127.0.0.1:54323.
+`db:start` prints a local API URL (http://127.0.0.1:55321) and anon key. Put them in `.env.local`. Supabase Studio runs at http://127.0.0.1:55323.
+
+This project's local ports are 553xx rather than Supabase's default 543xx, so it can run alongside another local Supabase project. They're set in `supabase/config.toml`.
 
 ```bash
 npm run db:reset                # rebuild the local database from migrations + seed.sql
 npm run db:test                 # run the pgTAP tests in supabase/tests
 ```
+
+`seed.sql` creates these local test accounts. The password for every login is `password123`.
+
+| Login                     | Who                                     | Till PIN    |
+| ------------------------- | --------------------------------------- | ----------- |
+| `admin@example.com`       | Admin, all branches                     | 9000        |
+| `manager@example.com`     | Manager, Main branch                    | 9999        |
+| `device-t1@example.com`   | Till device T1                          |             |
+| `device-kds1@example.com` | Kitchen display K1                      |             |
+| (no login)                | Ama Cashier / Kofi Cashier, Main branch | 1111 / 2222 |
 
 ### Option B: a hosted Supabase project
 
@@ -133,3 +145,5 @@ tests/                       Playwright end-to-end tests
 - **Money** is stored as integers in minor units (1250 = 12.50). Use `formatMoney()` to display it and `parseMoney()` to read typed input. Never use floats.
 - **`proxy.ts`** is Next.js 16's new name for `middleware.ts`. It works the same way.
 - **Cache Components** is on. Any component that reads cookies or the session must sit inside a `<Suspense>` boundary. See `node_modules/next/dist/docs/01-app/02-guides/authentication-with-cache-components.md`.
+- **Staff queries must list columns.** The API can never read `staff.pin_hash`, so `select('*')` on `staff` fails with "permission denied". Select the columns you need, and use `has_pin` to show whether a PIN is set.
+- **New database functions aren't callable from the app by default.** Grant `execute` to `authenticated` explicitly, and add the function to the allowlist in `supabase/tests/001_schema_security.test.sql`.
