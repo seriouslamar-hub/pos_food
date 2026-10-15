@@ -128,3 +128,102 @@
     @apply font-sans;
   }
 }
+
+/*
+ * Receipts and kitchen tickets (components/receipt.tsx, kitchen-ticket.tsx).
+ * Sized in millimetres for thermal rolls: 72 mm printable on 80 mm paper,
+ * 48 mm on 58 mm paper. Black on white only; thermal printers can't do grey.
+ */
+@layer components {
+  .ticket {
+    width: 72mm;
+    padding: 2mm 0 4mm;
+    background: #fff;
+    color: #000;
+    font-size: 12px;
+    line-height: 1.35;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .ticket[data-paper="58"] {
+    width: 48mm;
+    font-size: 10.5px;
+  }
+  .ticket-center {
+    text-align: center;
+  }
+  .ticket-shop {
+    font-size: 1.35em;
+    font-weight: 700;
+  }
+  .ticket-logo {
+    display: block;
+    max-width: 60%;
+    max-height: 18mm;
+    margin: 0 auto 1mm;
+    object-fit: contain;
+    filter: grayscale(1);
+  }
+  .ticket-big {
+    font-size: 1.5em;
+    font-weight: 700;
+  }
+  .ticket-strong {
+    font-weight: 700;
+  }
+  .ticket-pre {
+    white-space: pre-line;
+  }
+  .ticket-rule {
+    margin-top: 1.5mm;
+    padding-top: 1.5mm;
+    border-top: 1px dashed #000;
+  }
+  .ticket-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 2mm;
+  }
+  .ticket-row > :last-child {
+    flex-shrink: 0;
+    text-align: right;
+  }
+  .ticket-line + .ticket-line {
+    margin-top: 1mm;
+  }
+  .ticket-indent {
+    padding-left: 3mm;
+  }
+  .ticket-kitchen {
+    font-size: 15px;
+  }
+  .ticket-kitchen[data-paper="58"] {
+    font-size: 13px;
+  }
+
+  .print-area {
+    display: none;
+  }
+}
+
+@media print {
+  @page {
+    margin: 0;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+  body > :not(.print-area) {
+    display: none !important;
+  }
+  .print-area {
+    display: block;
+  }
+  .print-area .ticket {
+    break-after: page;
+  }
+  .print-area .ticket:last-child {
+    break-after: auto;
+  }
+}

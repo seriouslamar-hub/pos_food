@@ -131,6 +131,21 @@ Add these secrets in GitHub → your repo → Settings → Secrets and variables
 - Creating an admin or manager makes their login and shows a temporary password once. There is always at least one active admin.
 - Reactivating someone or moving them to another branch clears their PIN, because it might now clash with a colleague's.
 
+## Taking orders and payments
+
+- **Charge** opens the payment screen. Cash has quick buttons (exact, then the next round amounts) and a keypad for the cash received, and shows the change. Card and mobile money take a reference from the terminal or phone (required when the payment method says so). Payments can be split across methods; the sale completes once they add up to the total.
+- The order is saved when the payments are in. The server works out the total again; if a price changed in the meantime, the till shows the new total and asks for payment again. Saving and paying can be safely retried after a dropped connection: orders and payments keep their ids.
+- **Pay later:** with `orders.pay_later_dine_in` on, dine-in orders can go to the kitchen before payment. **Unpaid orders** on the till lists them (and any order whose payment didn't finish) for payment later.
+- Card and mobile money are recorded manually for now (`lib/payments/provider.ts`). Integrated terminals and mobile money prompts will plug in there through an Edge Function and webhook.
+
+### Receipts, kitchen tickets and the cash drawer
+
+The till prints through the browser (`lib/printing.ts`): receipts after a sale when `receipt.auto_print` is on (or with **Print receipt**), **Reprint last receipt** (marked COPY), and kitchen tickets when `print.kitchen_tickets` is on, for kitchens without a screen. To set up a till's printer:
+
+1. Make the receipt printer the default printer, with the paper size set to the roll (80 mm or 58 mm, matching the `receipt.paper_width_mm` setting) and no margins.
+2. Start Chrome with `--kiosk-printing` so it prints straight away without the print dialog.
+3. Cash drawers plug into the receipt printer. A web page can't send the "open drawer" command, so turn on the printer driver's option to open the drawer when printing. A QZ Tray driver (raw ESC/POS, can open the drawer itself) is stubbed in `lib/printing.ts` for later.
+
 ## End-to-end tests
 
 ```bash
@@ -161,7 +176,8 @@ lib/
   till.ts, till-session.tsx  till session types, RPC parsing, usePermission()
   money.ts                   formatMoney, parseMoney
   offline/                   Dexie database, outbox, sync worker (Phase 9)
-  payments/                  payment provider interface (Phase 6)
+  payments/                  payment providers and split-payment maths
+  printing.ts                printer drivers (browser print, QZ Tray stub)
 proxy.ts                     runs on every request and refreshes the Supabase session
 supabase/
   migrations/                every database change, in order

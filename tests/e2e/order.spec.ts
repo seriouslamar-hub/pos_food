@@ -44,13 +44,16 @@ test.describe("till order screen", () => {
     await expect(page.getByTestId("cart-total")).toHaveText("$69.30");
     await page.getByRole("button", { name: "Charge $69.30" }).click();
 
-    const placed = page.getByTestId("order-placed");
-    await expect(placed).toBeVisible();
-    await expect(page.getByTestId("order-total")).toHaveText("$69.30");
-    await expect(page.getByTestId("total-changed")).toHaveCount(0);
+    const payment = page.getByRole("dialog", { name: "Take payment" });
+    await expect(payment.getByTestId("payment-total")).toHaveText("$69.30");
+    await payment.getByRole("button", { name: "Exact $69.30" }).click();
+
+    const done = page.getByRole("dialog", { name: "Sale complete" });
+    await expect(done).toBeVisible();
+    await expect(done.getByTestId("change-due")).toHaveCount(0);
     await expect(page.getByTestId("cart-line")).toHaveCount(0);
 
-    const number = await page.getByTestId("order-number").textContent();
+    const number = await done.getByTestId("order-number").textContent();
     const db = localAdmin();
     const { data: order } = await db
       .from("orders")
@@ -64,11 +67,11 @@ test.describe("till order screen", () => {
       subtotal: 6300,
       tax_total: 630,
       total: 6930,
-      status: "open",
+      status: "paid",
     });
     const { data: lines } = await db
       .from("order_items")
-      .select("name_snapshot, combo_slot_name, unit_price")
+      .select("name_snapshot, combo_slot_name, unit_price, status")
       .eq("order_id", order!.id)
       .order("sort_order");
     expect(lines).toEqual([
@@ -76,14 +79,26 @@ test.describe("till order screen", () => {
         name_snapshot: "2-piece meal",
         combo_slot_name: null,
         unit_price: 6300,
+        status: "sent",
       },
       {
         name_snapshot: "2-piece chicken",
         combo_slot_name: "Chicken",
         unit_price: 0,
+        status: "sent",
       },
-      { name_snapshot: "Coleslaw", combo_slot_name: "Side", unit_price: 0 },
-      { name_snapshot: "Coke", combo_slot_name: "Drink", unit_price: 0 },
+      {
+        name_snapshot: "Coleslaw",
+        combo_slot_name: "Side",
+        unit_price: 0,
+        status: "sent",
+      },
+      {
+        name_snapshot: "Coke",
+        combo_slot_name: "Drink",
+        unit_price: 0,
+        status: "sent",
+      },
     ]);
   });
 
@@ -150,6 +165,12 @@ test.describe("till order screen", () => {
       .fill("12 Ring Road");
     await expect(charge).toBeEnabled();
     await charge.click();
-    await expect(page.getByTestId("order-placed")).toBeVisible();
+    await page
+      .getByRole("dialog", { name: "Take payment" })
+      .getByRole("button", { name: /^Exact/ })
+      .click();
+    await expect(
+      page.getByRole("dialog", { name: "Sale complete" }),
+    ).toBeVisible();
   });
 });

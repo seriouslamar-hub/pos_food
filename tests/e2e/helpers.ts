@@ -36,7 +36,32 @@ export async function resetTill() {
     .from("settings")
     .delete()
     .eq("branch_id", SEED.branchId)
-    .eq("key", "till.auto_lock_minutes");
+    .in("key", [...TILL_TEST_SETTINGS]);
+}
+
+/** Branch settings tests may turn on; resetTill() clears them. */
+const TILL_TEST_SETTINGS = [
+  "till.auto_lock_minutes",
+  "orders.pay_later_dine_in",
+  "receipt.auto_print",
+  "print.kitchen_tickets",
+] as const;
+
+/** Sets a branch setting for the seeded branch (read when the till loads). */
+export async function setBranchSetting(
+  key: (typeof TILL_TEST_SETTINGS)[number],
+  value: unknown,
+) {
+  const db = localAdmin();
+  await db
+    .from("settings")
+    .delete()
+    .eq("branch_id", SEED.branchId)
+    .eq("key", key);
+  const { error } = await db
+    .from("settings")
+    .insert({ branch_id: SEED.branchId, key, value });
+  if (error) throw error;
 }
 
 /** Opens a page and waits until React is interactive. */

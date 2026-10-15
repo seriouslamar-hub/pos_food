@@ -3,6 +3,7 @@
 import { LockIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PinKeypad } from "@/components/pin-keypad";
+import { PrintHost } from "@/components/print-host";
 import { OrderScreen } from "@/components/till/order-screen";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,7 @@ import {
   parseStartSession,
   pinFailureMessage,
   type TillSession,
+  type TillSettings,
 } from "@/lib/till";
 import { TillSessionProvider } from "@/lib/till-session";
 import { useIdleTimer } from "@/lib/use-idle-timer";
@@ -22,7 +24,7 @@ type TillAppProps = {
   deviceName: string;
   deviceCode: string;
   branchName: string;
-  autoLockMinutes: number;
+  settings: TillSettings;
 };
 
 export function TillApp({
@@ -31,8 +33,9 @@ export function TillApp({
   deviceName,
   deviceCode,
   branchName,
-  autoLockMinutes,
+  settings,
 }: TillAppProps) {
+  const { autoLockMinutes } = settings;
   const [supabase] = useState(createClient);
   const [session, setSession] = useState<TillSession | null>(null);
   const [lockNotice, setLockNotice] = useState<string | null>(null);
@@ -84,7 +87,11 @@ export function TillApp({
 
       {session ? (
         <TillSessionProvider session={session} lock={lock}>
-          <OrderScreen branchId={branchId} deviceId={deviceId} />
+          <OrderScreen
+            branchId={branchId}
+            deviceId={deviceId}
+            settings={settings}
+          />
         </TillSessionProvider>
       ) : (
         <LockScreen
@@ -95,6 +102,7 @@ export function TillApp({
           }}
         />
       )}
+      <PrintHost />
     </div>
   );
 }

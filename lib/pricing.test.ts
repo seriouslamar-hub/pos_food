@@ -211,6 +211,7 @@ const menu: MenuDoc = {
   items: [burger, chips, wrap, meal],
   taxes: [tax("Ex 15", 1500, false, "ex"), tax("Inc 15", 1500, true, "inc")],
   stations: [],
+  payment_methods: [],
 };
 const index = indexMenu(menu);
 

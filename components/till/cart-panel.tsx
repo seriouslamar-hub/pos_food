@@ -28,6 +28,7 @@ export function CartPanel({
   onRecall,
   onClear,
   onCharge,
+  onSendToKitchen,
 }: {
   cart: Cart;
   index: MenuIndex;
@@ -46,6 +47,8 @@ export function CartPanel({
   onRecall: () => void;
   onClear: () => void;
   onCharge: () => void;
+  /** Pay-later dine-in is on: send the order to the kitchen unpaid. */
+  onSendToKitchen?: () => void;
 }) {
   const empty = cart.lines.length === 0;
   const exclusiveTax = totals.taxes
@@ -55,6 +58,8 @@ export function CartPanel({
   const deliveryMissing =
     cart.orderType === "delivery" &&
     (!cart.customerPhone.trim() || !cart.deliveryAddress.trim());
+  const cannotSend =
+    empty || busy || totals.problems.length > 0 || deliveryMissing;
 
   return (
     <aside
@@ -250,12 +255,20 @@ export function CartPanel({
             Clear
           </Button>
         </div>
+        {onSendToKitchen && cart.orderType === "dine_in" ? (
+          <Button
+            variant="secondary"
+            size="touch"
+            disabled={cannotSend}
+            onClick={onSendToKitchen}
+          >
+            Send to kitchen, pay later
+          </Button>
+        ) : null}
         <Button
           size="touch"
           className="h-16 text-xl"
-          disabled={
-            empty || busy || totals.problems.length > 0 || deliveryMissing
-          }
+          disabled={cannotSend}
           onClick={onCharge}
         >
           {busy ? "Sending…" : `Charge ${formatAmount(totals.total, currency)}`}

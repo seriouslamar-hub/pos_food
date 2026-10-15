@@ -14,12 +14,38 @@ export type OrderLineSummary = {
   line_tax: number;
   line_total: number;
   status: "pending" | "sent" | "ready" | "voided";
+  kds_station_id: string | null;
   components: {
     id: string;
     name: string;
+    short_name: string;
     slot: string | null;
     modifiers: { name: string }[];
+    kds_station_id: string | null;
   }[];
+};
+
+export type OrderPayment = {
+  id: string;
+  method: "cash" | "card" | "mobile_money" | "other";
+  method_name: string;
+  amount: number;
+  tendered: number | null;
+  change_given: number | null;
+  reference: string | null;
+  status: "captured" | "refunded";
+};
+
+/** Branch details printed on receipts. */
+export type ReceiptBranch = {
+  name: string;
+  address: string | null;
+  phone: string | null;
+  receipt_header: string | null;
+  receipt_footer: string | null;
+  logo_url: string | null;
+  timezone: string;
+  currency_code: string;
 };
 
 export type OrderSummary = {
@@ -47,6 +73,10 @@ export type OrderSummary = {
   tax_total: number;
   total: number;
   paid_at: string | null;
+  sent_to_kitchen_at: string | null;
+  staff_name: string | null;
+  device_code: string | null;
+  branch: ReceiptBranch;
   lines: OrderLineSummary[];
   taxes: {
     name: string;
@@ -54,6 +84,9 @@ export type OrderSummary = {
     inclusive: boolean;
     amount: number;
   }[];
+  payments: OrderPayment[];
+  amount_paid: number;
+  change_given: number;
 };
 
 export function parseOrderSummary(json: unknown): OrderSummary {
@@ -66,7 +99,18 @@ export function parseOrderSummary(json: unknown): OrderSummary {
   ) {
     throw new Error("The saved order couldn't be read");
   }
-  return { ...(order as OrderSummary), taxes: order.taxes ?? [] };
+  return {
+    ...(order as OrderSummary),
+    taxes: order.taxes ?? [],
+    payments: order.payments ?? [],
+    amount_paid: order.amount_paid ?? 0,
+    change_given: order.change_given ?? 0,
+  };
+}
+
+/** Paid in full. Pay-later dine-in orders reach the kitchen before this. */
+export function isPaid(order: Pick<OrderSummary, "paid_at">): boolean {
+  return order.paid_at !== null;
 }
 
 export const ORDER_TYPE_LABELS = {

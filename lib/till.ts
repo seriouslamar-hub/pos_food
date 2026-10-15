@@ -2,6 +2,8 @@
  * Types and result parsing for the till RPCs (start_pos_session,
  * verify_override). Pure functions, safe to import anywhere.
  */
+import { toPaperWidth, type PaperWidth } from "./printing";
+import { effectiveSetting } from "./settings";
 
 export type StaffRole = "admin" | "manager" | "cashier";
 
@@ -113,17 +115,34 @@ export function pinFailureMessage(failure: PinFailure): string {
   }
 }
 
-/**
- * The till's auto-lock minutes from settings rows: the branch override wins
- * over the global default. Falls back to 5 minutes; 0 or less turns it off.
- */
-export function autoLockMinutes(
-  rows: { branch_id: string | null; value: unknown }[] | null | undefined,
+/** Settings the till reads when it starts. */
+export const TILL_SETTING_KEYS = [
+  "till.auto_lock_minutes",
+  "orders.pay_later_dine_in",
+  "receipt.auto_print",
+  "print.kitchen_tickets",
+  "receipt.paper_width_mm",
+] as const;
+
+export type TillSettings = {
+  autoLockMinutes: number;
+  payLaterDineIn: boolean;
+  autoPrintReceipt: boolean;
+  kitchenTickets: boolean;
+  paperWidth: PaperWidth;
+};
+
+export function tillSettings(
+  rows: { key: string; branch_id: string | null; value: unknown }[] | null,
   branchId: string,
-): number {
-  const pick =
-    rows?.find((r) => r.branch_id === branchId) ??
-    rows?.find((r) => r.branch_id === null);
-  const minutes = Number(pick?.value);
-  return Number.isFinite(minutes) ? minutes : 5;
+): TillSettings {
+  const value = (key: (typeof TILL_SETTING_KEYS)[number]) =>
+    effectiveSetting(key, rows, branchId);
+  return {
+    autoLockMinutes: Number(value("till.auto_lock_minutes")),
+    payLaterDineIn: value("orders.pay_later_dine_in") === true,
+    autoPrintReceipt: value("receipt.auto_print") === true,
+    kitchenTickets: value("print.kitchen_tickets") === true,
+    paperWidth: toPaperWidth(value("receipt.paper_width_mm")),
+  };
 }

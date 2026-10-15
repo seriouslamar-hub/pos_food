@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  autoLockMinutes,
   isSessionEndedError,
   parseOverride,
   parseStartSession,
   pinFailureMessage,
+  tillSettings,
 } from "./till";
 
 describe("parseStartSession", () => {
@@ -136,28 +136,68 @@ describe("isSessionEndedError", () => {
   });
 });
 
-describe("autoLockMinutes", () => {
+describe("tillSettings", () => {
   const branch = "b1";
+  const row = (
+    key: string,
+    value: unknown,
+    branch_id: string | null = null,
+  ) => ({
+    key,
+    branch_id,
+    value,
+  });
+
   it("prefers the branch override", () => {
+    const settings = tillSettings(
+      [
+        row("till.auto_lock_minutes", 5),
+        row("till.auto_lock_minutes", 2, branch),
+        row("receipt.paper_width_mm", 58, branch),
+        row("orders.pay_later_dine_in", true, branch),
+      ],
+      branch,
+    );
+    expect(settings).toEqual({
+      autoLockMinutes: 2,
+      payLaterDineIn: true,
+      autoPrintReceipt: false,
+      kitchenTickets: false,
+      paperWidth: 58,
+    });
+  });
+
+  it("falls back to the global default, then the built-in one", () => {
     expect(
-      autoLockMinutes(
-        [
-          { branch_id: null, value: 5 },
-          { branch_id: branch, value: 2 },
-        ],
-        branch,
-      ),
-    ).toBe(2);
+      tillSettings([row("till.auto_lock_minutes", 10)], branch).autoLockMinutes,
+    ).toBe(10);
+    expect(tillSettings([], branch)).toEqual({
+      autoLockMinutes: 5,
+      payLaterDineIn: false,
+      autoPrintReceipt: false,
+      kitchenTickets: false,
+      paperWidth: 80,
+    });
+    expect(tillSettings(null, branch).autoLockMinutes).toBe(5);
   });
-  it("falls back to the global default, then 5", () => {
-    expect(autoLockMinutes([{ branch_id: null, value: 10 }], branch)).toBe(10);
-    expect(autoLockMinutes([], branch)).toBe(5);
-    expect(autoLockMinutes(null, branch)).toBe(5);
-  });
+
   it("ignores other branches and bad values", () => {
-    expect(autoLockMinutes([{ branch_id: "other", value: 1 }], branch)).toBe(5);
     expect(
-      autoLockMinutes([{ branch_id: branch, value: "soon" }], branch),
+      tillSettings([row("till.auto_lock_minutes", 1, "other")], branch)
+        .autoLockMinutes,
     ).toBe(5);
+    const bad = tillSettings(
+      [
+        row("till.auto_lock_minutes", "soon", branch),
+        row("receipt.auto_print", "yes", branch),
+        row("receipt.paper_width_mm", 70, branch),
+      ],
+      branch,
+    );
+    expect(bad).toMatchObject({
+      autoLockMinutes: 5,
+      autoPrintReceipt: false,
+      paperWidth: 80,
+    });
   });
 });

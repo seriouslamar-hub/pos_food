@@ -989,6 +989,112 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount: number
+          branch_id: string
+          change_given: number | null
+          client_created_at: string | null
+          created_at: string
+          device_id: string | null
+          id: string
+          is_offline: boolean
+          method: Database["public"]["Enums"]["payment_method_type"]
+          method_name: string
+          order_id: string
+          payment_method_id: string
+          pos_session_id: string | null
+          reference: string | null
+          shift_id: string | null
+          staff_id: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          tendered: number | null
+        }
+        Insert: {
+          amount: number
+          branch_id: string
+          change_given?: number | null
+          client_created_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          id: string
+          is_offline?: boolean
+          method: Database["public"]["Enums"]["payment_method_type"]
+          method_name: string
+          order_id: string
+          payment_method_id: string
+          pos_session_id?: string | null
+          reference?: string | null
+          shift_id?: string | null
+          staff_id?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          tendered?: number | null
+        }
+        Update: {
+          amount?: number
+          branch_id?: string
+          change_given?: number | null
+          client_created_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          id?: string
+          is_offline?: boolean
+          method?: Database["public"]["Enums"]["payment_method_type"]
+          method_name?: string
+          order_id?: string
+          payment_method_id?: string
+          pos_session_id?: string | null
+          reference?: string | null
+          shift_id?: string | null
+          staff_id?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          tendered?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_pos_session_id_fkey"
+            columns: ["pos_session_id"]
+            isOneToOne: false
+            referencedRelation: "pos_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pin_attempts: {
         Row: {
           attempted_at: string
@@ -1214,6 +1320,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      branch_setting: {
+        Args: { p_branch_id: string; p_key: string }
+        Returns: Json
+      }
       can_access_branch: { Args: { p_branch_id: string }; Returns: boolean }
       consume_override: {
         Args: {
@@ -1307,6 +1417,10 @@ export type Database = {
       }
       order_summary: { Args: { p_order_id: string }; Returns: Json }
       pin_lockout_seconds: { Args: { p_device_id: string }; Returns: number }
+      record_payments: {
+        Args: { p_order_id: string; p_payments: Json; p_session_id: string }
+        Returns: Json
+      }
       reorder_menu: {
         Args: { p_ids: string[]; p_kind: string; p_parent_id?: string }
         Returns: undefined
@@ -1331,6 +1445,14 @@ export type Database = {
       round_div: {
         Args: { p_denominator: number; p_numerator: number }
         Returns: number
+      }
+      send_order_lines_to_kitchen: {
+        Args: { p_order_id: string }
+        Returns: undefined
+      }
+      send_to_kitchen: {
+        Args: { p_order_id: string; p_session_id: string }
+        Returns: Json
       }
       set_availability: {
         Args: {
@@ -1405,6 +1527,7 @@ export type Database = {
         | "partially_refunded"
       order_type: "dine_in" | "takeaway" | "delivery"
       payment_method_type: "cash" | "card" | "mobile_money" | "other"
+      payment_status: "captured" | "refunded"
       staff_role: "admin" | "manager" | "cashier"
     }
     CompositeTypes: {
@@ -1549,6 +1672,7 @@ export const Constants = {
       ],
       order_type: ["dine_in", "takeaway", "delivery"],
       payment_method_type: ["cash", "card", "mobile_money", "other"],
+      payment_status: ["captured", "refunded"],
       staff_role: ["admin", "manager", "cashier"],
     },
   },

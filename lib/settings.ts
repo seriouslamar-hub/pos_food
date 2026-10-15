@@ -61,6 +61,27 @@ export const SETTINGS: SettingDefinition[] = [
     fallback: true,
   },
   {
+    key: "orders.pay_later_dine_in",
+    label: "Dine-in orders can go to the kitchen before they're paid",
+    help: "Adds a “Send to kitchen, pay later” button for dine-in orders. Unpaid orders are listed on the till until someone takes payment.",
+    kind: "boolean",
+    fallback: false,
+  },
+  {
+    key: "receipt.auto_print",
+    label: "Print a receipt after every sale",
+    help: "When off, the cashier taps Print receipt if the customer wants one.",
+    kind: "boolean",
+    fallback: false,
+  },
+  {
+    key: "print.kitchen_tickets",
+    label: "Print kitchen tickets",
+    help: "For branches without a kitchen screen: the till prints a ticket for the kitchen when an order is paid or sent.",
+    kind: "boolean",
+    fallback: false,
+  },
+  {
     key: "receipt.paper_width_mm",
     label: "Receipt paper width",
     kind: "choice",
@@ -111,6 +132,24 @@ export function readSetting(
         ? (value as number)
         : null;
   }
+}
+
+/**
+ * The value that applies to a branch: its own override, then the global
+ * default (branch_id null), then the built-in fallback.
+ */
+export function effectiveSetting(
+  key: string,
+  rows: { key: string; branch_id: string | null; value: unknown }[] | null,
+  branchId: string | null,
+): SettingValue {
+  const def = SETTINGS.find((s) => s.key === key);
+  if (!def) throw new Error(`Unknown setting ${key}`);
+  const forKey = rows?.filter((r) => r.key === key) ?? [];
+  const row =
+    (branchId ? forKey.find((r) => r.branch_id === branchId) : undefined) ??
+    forKey.find((r) => r.branch_id === null);
+  return (row ? readSetting(def, row.value) : null) ?? def.fallback;
 }
 
 /** The value shown in a form field. */

@@ -58,6 +58,13 @@ export type MenuTax = {
   tax_category: string;
 };
 
+export type MenuPaymentMethod = {
+  id: string;
+  type: "cash" | "card" | "mobile_money" | "other";
+  name: string;
+  requires_reference: boolean;
+};
+
 export type MenuDoc = {
   branch_id: string;
   branch_name: string;
@@ -68,6 +75,8 @@ export type MenuDoc = {
   items: MenuItem[];
   taxes: MenuTax[];
   stations: { id: string; name: string }[];
+  /** Enabled payment methods, in till order. */
+  payment_methods: MenuPaymentMethod[];
 };
 
 /** Light structural check of what get_menu returned. */
@@ -85,6 +94,7 @@ export function parseMenu(json: unknown): MenuDoc {
     ...(doc as MenuDoc),
     taxes: doc.taxes ?? [],
     stations: doc.stations ?? [],
+    payment_methods: doc.payment_methods ?? [],
   };
 }
 

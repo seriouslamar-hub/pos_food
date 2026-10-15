@@ -56,6 +56,9 @@ const ACTION_LABELS: Record<string, string> = {
   "pos_session.start": "Till sign-in",
   "override.approved": "Manager approval given",
   "override.denied": "Manager approval refused",
+  "order.create": "Order taken",
+  "order.paid": "Order paid",
+  "order.sent_to_kitchen": "Sent to kitchen unpaid",
 };
 
 export const AUDIT_ENTITIES: { value: string; label: string }[] = [

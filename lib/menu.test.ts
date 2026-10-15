@@ -89,6 +89,7 @@ const menu: MenuDoc = {
   items: [fries, coleslaw, coke, meal],
   taxes: [],
   stations: [],
+  payment_methods: [],
 };
 
 describe("menu helpers", () => {

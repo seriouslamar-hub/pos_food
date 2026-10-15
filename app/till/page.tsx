@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { getSignedInUser } from "@/lib/auth";
 import { deviceHome } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
-import { autoLockMinutes } from "@/lib/till";
+import { TILL_SETTING_KEYS, tillSettings } from "@/lib/till";
 import { TillApp } from "./till-app";
 
 export const metadata: Metadata = { title: "Till" };
@@ -29,7 +29,7 @@ async function Till() {
   if (user.device.type !== "till") redirect(deviceHome(user.device.type));
 
   const supabase = await createClient();
-  const [{ data: branch }, { data: lockSettings }] = await Promise.all([
+  const [{ data: branch }, { data: settingRows }] = await Promise.all([
     supabase
       .from("branches")
       .select("name")
@@ -37,8 +37,8 @@ async function Till() {
       .single(),
     supabase
       .from("settings")
-      .select("branch_id, value")
-      .eq("key", "till.auto_lock_minutes"),
+      .select("key, branch_id, value")
+      .in("key", [...TILL_SETTING_KEYS]),
   ]);
 
   return (
@@ -48,7 +48,7 @@ async function Till() {
       deviceName={user.device.name}
       deviceCode={user.device.code}
       branchName={branch?.name ?? ""}
-      autoLockMinutes={autoLockMinutes(lockSettings, user.device.branchId)}
+      settings={tillSettings(settingRows, user.device.branchId)}
     />
   );
 }
