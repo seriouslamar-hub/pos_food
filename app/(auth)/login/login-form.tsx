@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useFieldIds } from "@/lib/use-field-ids";
 
 const notices: Record<string, string> = {
   expired: "Your session expired. Sign in again.",
@@ -15,6 +16,7 @@ const notices: Record<string, string> = {
 };
 
 export function LoginForm() {
+  const fid = useFieldIds();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "";
   const notice =
@@ -44,9 +46,9 @@ export function LoginForm() {
       <input type="hidden" name="next" value={next} />
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor={fid("email")}>Email</Label>
         <Input
-          id="email"
+          id={fid("email")}
           name="email"
           type="email"
           autoComplete="username"
@@ -56,9 +58,9 @@ export function LoginForm() {
         />
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor={fid("password")}>Password</Label>
         <Input
-          id="password"
+          id={fid("password")}
           name="password"
           type="password"
           autoComplete="current-password"

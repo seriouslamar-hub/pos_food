@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { registerDevice } from "./actions";
+import { useFieldIds } from "@/lib/use-field-ids";
 
 export type SetupBranch = { id: string; name: string };
 export type SetupDevice = {
@@ -36,6 +37,7 @@ export function DeviceSetupForm({
   devices: SetupDevice[];
   defaultBranchId: string | null;
 }) {
+  const fid = useFieldIds();
   const router = useRouter();
   const [branchId, setBranchId] = useState(
     defaultBranchId ?? branches[0]?.id ?? "",
@@ -81,9 +83,9 @@ export function DeviceSetupForm({
     <div className="flex flex-col gap-6">
       {branches.length > 1 ? (
         <div className="flex flex-col gap-2">
-          <Label htmlFor="branch">Branch</Label>
+          <Label htmlFor={fid("branch")}>Branch</Label>
           <select
-            id="branch"
+            id={fid("branch")}
             value={branchId}
             onChange={(e) => {
               setBranchId(e.target.value);

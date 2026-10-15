@@ -86,6 +86,81 @@ export type Database = {
           },
         ]
       }
+      branch_menu_items: {
+        Row: {
+          branch_id: string
+          is_available: boolean
+          menu_item_id: string
+          price_override: number | null
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          is_available?: boolean
+          menu_item_id: string
+          price_override?: number | null
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          is_available?: boolean
+          menu_item_id?: string
+          price_override?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branch_menu_items_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "branch_menu_items_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      branch_modifiers: {
+        Row: {
+          branch_id: string
+          is_available: boolean
+          modifier_id: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          is_available?: boolean
+          modifier_id: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          is_available?: boolean
+          modifier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branch_modifiers_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "branch_modifiers_modifier_id_fkey"
+            columns: ["modifier_id"]
+            isOneToOne: false
+            referencedRelation: "modifiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branches: {
         Row: {
           address: string | null
@@ -130,6 +205,113 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      categories: {
+        Row: {
+          colour: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          colour?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          colour?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      combo_slot_options: {
+        Row: {
+          is_default: boolean
+          menu_item_id: string
+          slot_id: string
+          sort_order: number
+          upcharge: number
+        }
+        Insert: {
+          is_default?: boolean
+          menu_item_id: string
+          slot_id: string
+          sort_order?: number
+          upcharge?: number
+        }
+        Update: {
+          is_default?: boolean
+          menu_item_id?: string
+          slot_id?: string
+          sort_order?: number
+          upcharge?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "combo_slot_options_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "combo_slot_options_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "combo_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      combo_slots: {
+        Row: {
+          combo_item_id: string
+          created_at: string
+          id: string
+          name: string
+          required: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          combo_item_id: string
+          created_at?: string
+          id?: string
+          name: string
+          required?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          combo_item_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          required?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "combo_slots_combo_item_id_fkey"
+            columns: ["combo_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       device_setup_codes: {
         Row: {
@@ -216,6 +398,216 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      item_modifier_groups: {
+        Row: {
+          menu_item_id: string
+          modifier_group_id: string
+          sort_order: number
+        }
+        Insert: {
+          menu_item_id: string
+          modifier_group_id: string
+          sort_order?: number
+        }
+        Update: {
+          menu_item_id?: string
+          modifier_group_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_modifier_groups_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_modifier_groups_modifier_group_id_fkey"
+            columns: ["modifier_group_id"]
+            isOneToOne: false
+            referencedRelation: "modifier_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kds_stations: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      menu_items: {
+        Row: {
+          base_price: number
+          category_id: string
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          kds_station_id: string | null
+          name: string
+          short_name: string | null
+          sort_order: number
+          tax_category: string
+          type: Database["public"]["Enums"]["menu_item_type"]
+          updated_at: string
+        }
+        Insert: {
+          base_price: number
+          category_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          kds_station_id?: string | null
+          name: string
+          short_name?: string | null
+          sort_order?: number
+          tax_category?: string
+          type?: Database["public"]["Enums"]["menu_item_type"]
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          kds_station_id?: string | null
+          name?: string
+          short_name?: string | null
+          sort_order?: number
+          tax_category?: string
+          type?: Database["public"]["Enums"]["menu_item_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_items_kds_station_id_fkey"
+            columns: ["kds_station_id"]
+            isOneToOne: false
+            referencedRelation: "kds_stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modifier_groups: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          max_select: number
+          min_select: number
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_select?: number
+          min_select?: number
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_select?: number
+          min_select?: number
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      modifiers: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          is_active: boolean
+          kds_station_id: string | null
+          name: string
+          price_delta: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          is_active?: boolean
+          kds_station_id?: string | null
+          name: string
+          price_delta?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          is_active?: boolean
+          kds_station_id?: string | null
+          name?: string
+          price_delta?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modifiers_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "modifier_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modifiers_kds_station_id_fkey"
+            columns: ["kds_station_id"]
+            isOneToOne: false
+            referencedRelation: "kds_stations"
             referencedColumns: ["id"]
           },
         ]
@@ -611,11 +1003,17 @@ export type Database = {
         Args: { p_branch_id: string; p_pin: string }
         Returns: string
       }
+      get_menu: { Args: { p_branch_id: string }; Returns: Json }
       has_permission: { Args: { p_permission: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_device: { Args: never; Returns: boolean }
       is_manager: { Args: never; Returns: boolean }
+      load_sample_menu: { Args: never; Returns: undefined }
       pin_lockout_seconds: { Args: { p_device_id: string }; Returns: number }
+      reorder_menu: {
+        Args: { p_ids: string[]; p_kind: string; p_parent_id?: string }
+        Returns: undefined
+      }
       require_pos_session: {
         Args: { p_session_id: string }
         Returns: {
@@ -632,6 +1030,19 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      set_availability: {
+        Args: {
+          p_available: boolean
+          p_branch_id: string
+          p_kind: string
+          p_target_id: string
+        }
+        Returns: undefined
+      }
+      set_branch_price: {
+        Args: { p_branch_id: string; p_menu_item_id: string; p_price: number }
+        Returns: undefined
       }
       set_staff_login: {
         Args: { p_auth_user_id: string; p_staff_id: string }
@@ -675,6 +1086,7 @@ export type Database = {
     }
     Enums: {
       device_type: "till" | "kds" | "pickup" | "kiosk"
+      menu_item_type: "item" | "combo"
       payment_method_type: "cash" | "card" | "mobile_money" | "other"
       staff_role: "admin" | "manager" | "cashier"
     }
@@ -805,6 +1217,7 @@ export const Constants = {
   public: {
     Enums: {
       device_type: ["till", "kds", "pickup", "kiosk"],
+      menu_item_type: ["item", "combo"],
       payment_method_type: ["cash", "card", "mobile_money", "other"],
       staff_role: ["admin", "manager", "cashier"],
     },

@@ -9,9 +9,11 @@ import { Label } from "@/components/ui/label";
 import { normalizeSetupCode } from "@/lib/setup-code";
 import { redeemSetupCode } from "./actions";
 import { DEVICE_ID_STORAGE_KEY } from "./device-setup-form";
+import { useFieldIds } from "@/lib/use-field-ids";
 
 /** Enter the one-time code an admin got when they created this device. */
 export function SetupCodeForm() {
+  const fid = useFieldIds();
   const router = useRouter();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -41,9 +43,9 @@ export function SetupCodeForm() {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <Label htmlFor="setup-code">Setup code</Label>
+      <Label htmlFor={fid("setup-code")}>Setup code</Label>
       <Input
-        id="setup-code"
+        id={fid("setup-code")}
         value={code}
         onChange={(e) => setCode(e.target.value)}
         placeholder="XXXXX-XXXXX"

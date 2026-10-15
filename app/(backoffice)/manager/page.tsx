@@ -46,6 +46,7 @@ async function ManagerHome() {
           title: "Availability",
           description: "Mark items and extras out of stock on every till.",
           phase: "Phase 4",
+          href: "/manager/availability",
         },
         {
           title: "Day and shifts",

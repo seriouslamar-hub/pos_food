@@ -4,6 +4,7 @@ import { LockIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ManagerOverride } from "@/components/manager-override";
 import { PinKeypad } from "@/components/pin-keypad";
+import { MenuGrid } from "@/components/till/menu-grid";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,8 +20,10 @@ import {
   useTillSession,
 } from "@/lib/till-session";
 import { useIdleTimer } from "@/lib/use-idle-timer";
+import { useLiveMenu } from "@/lib/use-live-menu";
 
 type TillAppProps = {
+  branchId: string;
   deviceName: string;
   deviceCode: string;
   branchName: string;
@@ -28,6 +31,7 @@ type TillAppProps = {
 };
 
 export function TillApp({
+  branchId,
   deviceName,
   deviceCode,
   branchName,
@@ -84,7 +88,7 @@ export function TillApp({
 
       {session ? (
         <TillSessionProvider session={session} lock={lock}>
-          <TillHome />
+          <TillHome branchId={branchId} />
         </TillSessionProvider>
       ) : (
         <LockScreen
@@ -205,9 +209,10 @@ function LockScreen({
 }
 
 /** Stand-in for the order screen (Phase 5). Shows the override flow working. */
-function TillHome() {
+function TillHome({ branchId }: { branchId: string }) {
   const { session } = useTillSession();
   const canNoSale = usePermission("drawer.no_sale");
+  const { menu, error } = useLiveMenu(branchId);
   const [overrideOpen, setOverrideOpen] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
@@ -223,18 +228,12 @@ function TillHome() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">
-          Hello, {session.staff.fullName.split(" ")[0]}
-        </h1>
+    <main className="flex min-h-0 flex-1 flex-col gap-4 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-muted-foreground">
-          The order screen arrives in Phase 5. For now you can test sign-in,
-          switching user, auto-lock and manager approval.
+          Hello, {session.staff.fullName.split(" ")[0]}. Taking orders arrives
+          in Phase 5; the menu below updates live.
         </p>
-      </div>
-
-      <div className="flex flex-wrap gap-3">
         <Button size="touch" variant="secondary" onClick={noSale}>
           No sale (open drawer)
         </Button>
@@ -250,6 +249,17 @@ function TillHome() {
           </AlertDescription>
         </Alert>
       ) : null}
+
+      {error ? (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
+      {menu ? (
+        <MenuGrid menu={menu} />
+      ) : (
+        <p className="text-muted-foreground">Loading the menu…</p>
+      )}
 
       <ManagerOverride
         open={overrideOpen}

@@ -102,3 +102,58 @@ export function parseMoney(input: string, currencyCode?: string): number {
   const value = Number(magnitude);
   return minus && value !== 0 ? -value : value;
 }
+
+/**
+ * Locale for amounts shown in the app. Fixed (rather than the browser's) so
+ * server-rendered and client-rendered amounts always match.
+ */
+export const APP_LOCALE = "en-GB";
+
+const amountFormatters = new Map<string, Intl.NumberFormat>();
+
+/**
+ * Minor units for display in the app: fixed locale and the short symbol
+ * (GH₵12.50, $12.50). Exact, like formatMoney.
+ */
+export function formatAmount(minorUnits: number, currencyCode: string): string {
+  if (!Number.isSafeInteger(minorUnits)) {
+    throw new TypeError(
+      `formatAmount expects integer minor units, got ${minorUnits}`,
+    );
+  }
+  const code = currencyCode.toUpperCase();
+  let formatter = amountFormatters.get(code);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(APP_LOCALE, {
+      style: "currency",
+      currency: code,
+      currencyDisplay: "narrowSymbol",
+    });
+    amountFormatters.set(code, formatter);
+  }
+  return formatter.format(
+    toMoneyInput(minorUnits, code) as Intl.StringNumericLiteral,
+  );
+}
+
+/** The short symbol for a currency, e.g. "GH₵" or "$". */
+export function currencySymbol(currencyCode: string): string {
+  const parts = new Intl.NumberFormat(APP_LOCALE, {
+    style: "currency",
+    currency: currencyCode,
+    currencyDisplay: "narrowSymbol",
+  }).formatToParts(0);
+  return parts.find((p) => p.type === "currency")?.value ?? currencyCode;
+}
+
+/** Minor units as an editable decimal string without symbol, e.g. "12.50". */
+export function toMoneyInput(minorUnits: number, currencyCode: string): string {
+  const digits = currencyFractionDigits(currencyCode);
+  const sign = minorUnits < 0 ? "-" : "";
+  const magnitude = Math.abs(minorUnits)
+    .toString()
+    .padStart(digits + 1, "0");
+  return digits === 0
+    ? `${sign}${magnitude}`
+    : `${sign}${magnitude.slice(0, -digits)}.${magnitude.slice(-digits)}`;
+}

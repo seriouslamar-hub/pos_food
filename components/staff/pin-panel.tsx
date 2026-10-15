@@ -5,6 +5,7 @@ import { Field, FormSuccess, invalid } from "@/components/admin/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { setStaffPin } from "@/lib/actions/staff";
+import { useFieldIds } from "@/lib/use-field-ids";
 
 /** Set or change someone's till PIN. set_staff_pin enforces who may do this. */
 export function PinPanel({
@@ -16,6 +17,7 @@ export function PinPanel({
   hasPin: boolean;
   isActive: boolean;
 }) {
+  const fid = useFieldIds();
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -56,20 +58,20 @@ export function PinPanel({
           : "No PIN yet, so they can't use the till."}
       </p>
       <Field
-        id="new-pin"
+        id={fid("new-pin")}
         label={hasPin ? "New PIN" : "PIN"}
         error={error ?? undefined}
       >
         <div className="flex gap-2">
           <Input
-            id="new-pin"
+            id={fid("new-pin")}
             type="password"
             inputMode="numeric"
             autoComplete="new-password"
             value={pin}
             onChange={(e) => setPin(e.target.value)}
             className="max-w-40"
-            {...invalid("new-pin", error ?? undefined)}
+            {...invalid(fid("new-pin"), error ?? undefined)}
           />
           <Button type="submit" variant="outline" size="lg" disabled={pending}>
             {pending ? "Saving…" : "Save PIN"}

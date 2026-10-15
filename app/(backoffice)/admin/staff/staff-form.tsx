@@ -25,6 +25,7 @@ import {
   staffSchema,
   type StaffFormValues,
 } from "@/lib/validation";
+import { useFieldIds } from "@/lib/use-field-ids";
 
 export type BranchOption = { id: string; name: string };
 
@@ -38,6 +39,7 @@ export function StaffForm({
   initial: StaffFormValues;
   branches: BranchOption[];
 }) {
+  const fid = useFieldIds();
   const router = useRouter();
   const [values, setValues] = useState(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -147,19 +149,19 @@ export function StaffForm({
     >
       <FormError message={formError} />
 
-      <Field id="fullName" label="Full name" error={errors.fullName}>
+      <Field id={fid("fullName")} label="Full name" error={errors.fullName}>
         <Input
-          id="fullName"
+          id={fid("fullName")}
           value={values.fullName}
           onChange={(e) => set("fullName", e.target.value)}
-          {...invalid("fullName", errors.fullName)}
+          {...invalid(fid("fullName"), errors.fullName)}
         />
       </Field>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field id="role" label="Role" error={errors.role}>
+        <Field id={fid("role")} label="Role" error={errors.role}>
           <Select
-            id="role"
+            id={fid("role")}
             value={values.role}
             onChange={(e) =>
               set("role", e.target.value as StaffFormValues["role"])
@@ -171,7 +173,7 @@ export function StaffForm({
           </Select>
         </Field>
         <Field
-          id="branchId"
+          id={fid("branchId")}
           label="Branch"
           error={errors.branchId}
           hint={
@@ -181,10 +183,10 @@ export function StaffForm({
           }
         >
           <Select
-            id="branchId"
+            id={fid("branchId")}
             value={values.branchId}
             onChange={(e) => set("branchId", e.target.value)}
-            {...invalid("branchId", errors.branchId)}
+            {...invalid(fid("branchId"), errors.branchId)}
           >
             <option value="">
               {values.role === "admin"
@@ -202,7 +204,7 @@ export function StaffForm({
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field
-          id="email"
+          id={fid("email")}
           label={needsLogin ? "Email (to sign in)" : "Email (optional)"}
           error={errors.email}
           hint={
@@ -212,17 +214,17 @@ export function StaffForm({
           }
         >
           <Input
-            id="email"
+            id={fid("email")}
             type="email"
             autoComplete="off"
             value={values.email}
             onChange={(e) => set("email", e.target.value)}
-            {...invalid("email", errors.email)}
+            {...invalid(fid("email"), errors.email)}
           />
         </Field>
-        <Field id="phone" label="Phone" error={errors.phone}>
+        <Field id={fid("phone")} label="Phone" error={errors.phone}>
           <Input
-            id="phone"
+            id={fid("phone")}
             type="tel"
             value={values.phone}
             onChange={(e) => set("phone", e.target.value)}
@@ -232,34 +234,34 @@ export function StaffForm({
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field
-          id="discountPercent"
+          id={fid("discountPercent")}
           label="Discount limit (%)"
           error={errors.discountPercent}
           hint="Bigger discounts need a manager's approval."
         >
           <Input
-            id="discountPercent"
+            id={fid("discountPercent")}
             inputMode="decimal"
             value={values.discountPercent}
             onChange={(e) => set("discountPercent", e.target.value)}
-            {...invalid("discountPercent", errors.discountPercent)}
+            {...invalid(fid("discountPercent"), errors.discountPercent)}
           />
         </Field>
         {isCreate ? (
           <Field
-            id="pin"
+            id={fid("pin")}
             label="Till PIN (optional)"
             error={errors.pin}
             hint="4 to 6 digits. You can set it later."
           >
             <Input
-              id="pin"
+              id={fid("pin")}
               type="password"
               inputMode="numeric"
               autoComplete="new-password"
               value={values.pin ?? ""}
               onChange={(e) => set("pin", e.target.value)}
-              {...invalid("pin", errors.pin)}
+              {...invalid(fid("pin"), errors.pin)}
             />
           </Field>
         ) : null}
@@ -267,11 +269,11 @@ export function StaffForm({
 
       <div className="flex items-center gap-3">
         <Checkbox
-          id="isActive"
+          id={fid("isActive")}
           checked={values.isActive}
           onCheckedChange={(checked) => set("isActive", checked === true)}
         />
-        <Label htmlFor="isActive">Active</Label>
+        <Label htmlFor={fid("isActive")}>Active</Label>
       </div>
       {!values.isActive ? (
         <p className="text-sm text-muted-foreground">

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createTax, updateTax } from "@/lib/actions/catalog";
 import { fieldErrors, taxSchema, type TaxFormValues } from "@/lib/validation";
+import { useFieldIds } from "@/lib/use-field-ids";
 
 export function TaxForm({
   taxId,
@@ -17,6 +18,7 @@ export function TaxForm({
   taxId?: string;
   initial: TaxFormValues;
 }) {
+  const fid = useFieldIds();
   const router = useRouter();
   const [values, setValues] = useState(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -59,51 +61,55 @@ export function TaxForm({
       <FormError message={formError} />
       <div className="grid gap-5 sm:grid-cols-2">
         <Field
-          id="name"
+          id={fid("name")}
           label="Name"
           error={errors.name}
           hint="As printed on receipts, e.g. VAT."
         >
           <Input
-            id="name"
+            id={fid("name")}
             value={values.name}
             onChange={(e) => set("name", e.target.value)}
-            {...invalid("name", errors.name)}
+            {...invalid(fid("name"), errors.name)}
           />
         </Field>
-        <Field id="ratePercent" label="Rate (%)" error={errors.ratePercent}>
+        <Field
+          id={fid("ratePercent")}
+          label="Rate (%)"
+          error={errors.ratePercent}
+        >
           <Input
-            id="ratePercent"
+            id={fid("ratePercent")}
             inputMode="decimal"
             value={values.ratePercent}
             onChange={(e) => set("ratePercent", e.target.value)}
             className="max-w-32"
-            {...invalid("ratePercent", errors.ratePercent)}
+            {...invalid(fid("ratePercent"), errors.ratePercent)}
           />
         </Field>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <Field
-          id="taxCategory"
+          id={fid("taxCategory")}
           label="Tax category"
           error={errors.taxCategory}
           hint="Menu items in this category pay this tax. Several taxes can share a category."
         >
           <Input
-            id="taxCategory"
+            id={fid("taxCategory")}
             value={values.taxCategory}
             onChange={(e) => set("taxCategory", e.target.value)}
             className="font-mono"
-            {...invalid("taxCategory", errors.taxCategory)}
+            {...invalid(fid("taxCategory"), errors.taxCategory)}
           />
         </Field>
         <Field
-          id="sortOrder"
+          id={fid("sortOrder")}
           label="Order on receipts"
           error={errors.sortOrder}
         >
           <Input
-            id="sortOrder"
+            id={fid("sortOrder")}
             inputMode="numeric"
             value={values.sortOrder}
             onChange={(e) => set("sortOrder", e.target.value)}
@@ -136,11 +142,11 @@ export function TaxForm({
       </fieldset>
       <div className="flex items-center gap-3">
         <Checkbox
-          id="isActive"
+          id={fid("isActive")}
           checked={values.isActive}
           onCheckedChange={(checked) => set("isActive", checked === true)}
         />
-        <Label htmlFor="isActive">Active</Label>
+        <Label htmlFor={fid("isActive")}>Active</Label>
       </div>
       <div>
         <Button type="submit" size="lg" disabled={pending}>

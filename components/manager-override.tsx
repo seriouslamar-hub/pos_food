@@ -21,6 +21,7 @@ import {
   type OverrideApproval,
 } from "@/lib/till";
 import { useTillSession } from "@/lib/till-session";
+import { useFieldIds } from "@/lib/use-field-ids";
 
 type ManagerOverrideProps = {
   open: boolean;
@@ -45,6 +46,7 @@ export function ManagerOverride({
   requireReason = false,
   onApproved,
 }: ManagerOverrideProps) {
+  const fid = useFieldIds();
   const { session, lock } = useTillSession();
   const [supabase] = useState(createClient);
   const [reason, setReason] = useState("");
@@ -100,9 +102,9 @@ export function ManagerOverride({
         <div className="flex flex-col items-center gap-4">
           {requireReason ? (
             <div className="flex w-full flex-col gap-2">
-              <Label htmlFor="override-reason">Reason</Label>
+              <Label htmlFor={fid("override-reason")}>Reason</Label>
               <Input
-                id="override-reason"
+                id={fid("override-reason")}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Why is this needed?"

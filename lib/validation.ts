@@ -4,6 +4,7 @@
  * booleans); outputs are ready for the database.
  */
 import { z } from "zod";
+import { parseMoney } from "./money";
 import { parsePercentToBps } from "./percent";
 
 // ---------------------------------------------------------------------------
@@ -227,6 +228,170 @@ export const paymentMethodSchema = z
     requiresReference: v.type === "cash" ? false : v.requiresReference,
   }));
 export type PaymentMethodFormValues = z.input<typeof paymentMethodSchema>;
+
+// ---------------------------------------------------------------------------
+// Menu
+// ---------------------------------------------------------------------------
+
+/** A money amount typed in a currency's units, stored as integer minor units. */
+const money = (
+  what: string,
+  currency: string,
+  options: { allowNegative?: boolean } = {},
+) =>
+  z
+    .string()
+    .trim()
+    .transform((value, ctx) => {
+      let minor: number;
+      try {
+        minor = parseMoney(value === "" ? "0" : value, currency);
+      } catch {
+        ctx.addIssue({
+          code: "custom",
+          message: `Enter ${what} as a number, like 12.50`,
+        });
+        return z.NEVER;
+      }
+      if (!options.allowNegative && minor < 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: `${what[0].toUpperCase()}${what.slice(1)} can't be negative`,
+        });
+        return z.NEVER;
+      }
+      if (Math.abs(minor) > 100_000_000) {
+        ctx.addIssue({ code: "custom", message: "That amount is too large" });
+        return z.NEVER;
+      }
+      return minor;
+    });
+
+const wholeNumber = (min: number, max: number) =>
+  z
+    .string()
+    .trim()
+    .regex(/^\d{1,3}$/, "Enter a whole number")
+    .transform(Number)
+    .pipe(
+      z
+        .number()
+        .min(min, `Enter at least ${min}`)
+        .max(max, `Enter at most ${max}`),
+    );
+
+const taxCategoryKey = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(
+    /^[a-z0-9_]+$/,
+    "Use lowercase letters, numbers and underscores, like standard",
+  );
+
+export const categorySchema = z.object({
+  name: requiredText("a category name", 40),
+  colour: z
+    .string()
+    .trim()
+    .transform((v) => (v === "" ? null : v))
+    .pipe(
+      z
+        .string()
+        .regex(/^#[0-9a-fA-F]{6}$/, "Choose a colour")
+        .nullable(),
+    ),
+  isActive: z.boolean(),
+});
+export type CategoryFormValues = z.input<typeof categorySchema>;
+
+export function menuItemSchema(currency: string) {
+  return z.object({
+    categoryId: z.uuid("Choose a category"),
+    type: z.enum(["item", "combo"]),
+    name: requiredText("a name", 80),
+    shortName: optionalText(30),
+    description: optionalText(300),
+    price: money("the price", currency),
+    taxCategory: taxCategoryKey,
+    kdsStationId: optionalUuid("Choose a station"),
+    isActive: z.boolean(),
+  });
+}
+export type MenuItemFormValues = z.input<ReturnType<typeof menuItemSchema>>;
+
+export const modifierGroupSchema = z
+  .object({
+    name: requiredText("a group name", 40),
+    minSelect: wholeNumber(0, 20),
+    maxSelect: wholeNumber(1, 20),
+    isActive: z.boolean(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.minSelect > v.maxSelect) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["maxSelect"],
+        message: "Must be at least the minimum",
+      });
+    }
+  });
+export type ModifierGroupFormValues = z.input<typeof modifierGroupSchema>;
+
+export function modifierSchema(currency: string) {
+  return z.object({
+    name: requiredText("a name", 40),
+    priceDelta: money("the price change", currency, { allowNegative: true }),
+    kdsStationId: optionalUuid("Choose a station"),
+    isActive: z.boolean(),
+  });
+}
+export type ModifierFormValues = z.input<ReturnType<typeof modifierSchema>>;
+
+export const stationSchema = z.object({
+  name: requiredText("a station name", 30),
+  isActive: z.boolean(),
+});
+export type StationFormValues = z.input<typeof stationSchema>;
+
+export const comboSlotSchema = z.object({
+  name: requiredText("a slot name", 30),
+  required: z.boolean(),
+});
+export type ComboSlotFormValues = z.input<typeof comboSlotSchema>;
+
+export function comboOptionsSchema(currency: string) {
+  return z
+    .array(
+      z.object({
+        menuItemId: z.uuid("Choose an item"),
+        upcharge: money("the upcharge", currency),
+        isDefault: z.boolean(),
+      }),
+    )
+    .superRefine((options, ctx) => {
+      if (options.filter((o) => o.isDefault).length > 1) {
+        ctx.addIssue({ code: "custom", message: "Choose at most one default" });
+      }
+      const ids = options.map((o) => o.menuItemId);
+      if (new Set(ids).size !== ids.length) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Each item can only be listed once",
+        });
+      }
+    });
+}
+export type ComboOptionFormValues = z.input<
+  ReturnType<typeof comboOptionsSchema>
+>[number];
+
+export function branchPriceSchema(currency: string) {
+  return z.union([
+    z.literal("").transform(() => null),
+    money("the price", currency),
+  ]);
+}
 
 // ---------------------------------------------------------------------------
 // Errors

@@ -14,6 +14,7 @@ import {
   type SettingDefinition,
   type SettingValue,
 } from "@/lib/settings";
+import { useFieldIds } from "@/lib/use-field-ids";
 
 export function SettingsForm({
   branchId,
@@ -26,6 +27,7 @@ export function SettingsForm({
   defaults: Record<string, SettingValue>;
   overrides: Record<string, SettingValue>;
 }) {
+  const fid = useFieldIds();
   const router = useRouter();
   const [inputs, setInputs] = useState<Record<string, SettingInput>>(() =>
     Object.fromEntries(
@@ -83,7 +85,7 @@ export function SettingsForm({
   return (
     <div className="flex max-w-2xl flex-col gap-6">
       <Field
-        id="scope"
+        id={fid("scope")}
         label="Settings for"
         hint={
           branchId
@@ -92,7 +94,7 @@ export function SettingsForm({
         }
       >
         <Select
-          id="scope"
+          id={fid("scope")}
           value={branchId ?? ""}
           onChange={(e) =>
             router.push(
@@ -158,7 +160,8 @@ function SettingField({
   branchScope: boolean;
   onChange: (patch: Partial<SettingInput>) => void;
 }) {
-  const id = def.key.replace(/\./g, "-");
+  const fid = useFieldIds();
+  const id = fid(def.key.replace(/\./g, "-"));
   const disabled = branchScope && input.useDefault;
   const control =
     def.kind === "boolean" ? (

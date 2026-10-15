@@ -14,6 +14,7 @@ import {
   fieldErrors,
   type CashierFormValues,
 } from "@/lib/validation";
+import { useFieldIds } from "@/lib/use-field-ids";
 
 /** A manager's form for a cashier in their own branch. */
 export function CashierForm({
@@ -23,6 +24,7 @@ export function CashierForm({
   staffId?: string;
   initial: CashierFormValues;
 }) {
+  const fid = useFieldIds();
   const router = useRouter();
   const [values, setValues] = useState(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -81,64 +83,64 @@ export function CashierForm({
       noValidate
     >
       <FormError message={formError} />
-      <Field id="fullName" label="Full name" error={errors.fullName}>
+      <Field id={fid("fullName")} label="Full name" error={errors.fullName}>
         <Input
-          id="fullName"
+          id={fid("fullName")}
           value={values.fullName}
           onChange={(e) => set("fullName", e.target.value)}
-          {...invalid("fullName", errors.fullName)}
+          {...invalid(fid("fullName"), errors.fullName)}
         />
       </Field>
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field id="phone" label="Phone" error={errors.phone}>
+        <Field id={fid("phone")} label="Phone" error={errors.phone}>
           <Input
-            id="phone"
+            id={fid("phone")}
             type="tel"
             value={values.phone}
             onChange={(e) => set("phone", e.target.value)}
           />
         </Field>
         <Field
-          id="discountPercent"
+          id={fid("discountPercent")}
           label="Discount limit (%)"
           error={errors.discountPercent}
           hint="Up to your own limit. Bigger discounts need your approval."
         >
           <Input
-            id="discountPercent"
+            id={fid("discountPercent")}
             inputMode="decimal"
             value={values.discountPercent}
             onChange={(e) => set("discountPercent", e.target.value)}
-            {...invalid("discountPercent", errors.discountPercent)}
+            {...invalid(fid("discountPercent"), errors.discountPercent)}
           />
         </Field>
       </div>
       {isCreate ? (
         <Field
-          id="pin"
+          id={fid("pin")}
           label="Till PIN"
           error={errors.pin}
           hint="4 to 6 digits. You can set it later."
         >
           <Input
-            id="pin"
+            id={fid("pin")}
             type="password"
             inputMode="numeric"
             autoComplete="new-password"
             className="max-w-40"
             value={values.pin ?? ""}
             onChange={(e) => set("pin", e.target.value)}
-            {...invalid("pin", errors.pin)}
+            {...invalid(fid("pin"), errors.pin)}
           />
         </Field>
       ) : null}
       <div className="flex items-center gap-3">
         <Checkbox
-          id="isActive"
+          id={fid("isActive")}
           checked={values.isActive}
           onCheckedChange={(checked) => set("isActive", checked === true)}
         />
-        <Label htmlFor="isActive">Active</Label>
+        <Label htmlFor={fid("isActive")}>Active</Label>
       </div>
       <div>
         <Button type="submit" size="lg" disabled={pending}>

@@ -73,6 +73,7 @@ async function AdminHome() {
           description:
             "Categories, items, modifiers, combos and branch prices.",
           phase: "Phase 4",
+          href: "/admin/menu",
         },
         {
           title: "Reports",

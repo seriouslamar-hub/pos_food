@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   currencyFractionDigits,
+  currencySymbol,
+  formatAmount,
   formatMoney,
   MoneyParseError,
   parseMoney,
+  toMoneyInput,
 } from "./money";
 
 describe("formatMoney", () => {
@@ -140,5 +143,23 @@ describe("currencyFractionDigits", () => {
     expect(currencyFractionDigits("GHS")).toBe(2);
     expect(currencyFractionDigits("JPY")).toBe(0);
     expect(currencyFractionDigits("KWD")).toBe(3);
+  });
+});
+
+describe("app formatting helpers", () => {
+  it("formats in the fixed app locale", () => {
+    expect(formatAmount(1250, "GHS")).toBe("GH₵12.50");
+    expect(formatAmount(1250, "USD")).toBe("$12.50");
+    expect(formatAmount(-1250, "GHS")).toBe("-GH₵12.50");
+  });
+  it("gives short currency symbols", () => {
+    expect(currencySymbol("GHS")).toBe("GH₵");
+    expect(currencySymbol("USD")).toBe("$");
+  });
+  it("turns minor units into editable text", () => {
+    expect(toMoneyInput(1250, "GHS")).toBe("12.50");
+    expect(toMoneyInput(5, "USD")).toBe("0.05");
+    expect(toMoneyInput(-300, "USD")).toBe("-3.00");
+    expect(toMoneyInput(1250, "JPY")).toBe("1250");
   });
 });

@@ -23,6 +23,7 @@ import {
   type DeviceFormValues,
 } from "@/lib/validation";
 import { SetupCodePanel } from "./setup-code-panel";
+import { useFieldIds } from "@/lib/use-field-ids";
 
 export type ExistingDevice = { id: string; branchId: string; code: string };
 
@@ -39,6 +40,7 @@ export function DeviceForm({
   branches: { id: string; name: string }[];
   existing: ExistingDevice[];
 }) {
+  const fid = useFieldIds();
   const router = useRouter();
   const [values, setValues] = useState(initial);
   const [codeEdited, setCodeEdited] = useState(Boolean(deviceId));
@@ -128,12 +130,12 @@ export function DeviceForm({
     >
       <FormError message={formError} />
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field id="branchId" label="Branch" error={errors.branchId}>
+        <Field id={fid("branchId")} label="Branch" error={errors.branchId}>
           <Select
-            id="branchId"
+            id={fid("branchId")}
             value={values.branchId}
             onChange={(e) => set("branchId", e.target.value)}
-            {...invalid("branchId", errors.branchId)}
+            {...invalid(fid("branchId"), errors.branchId)}
           >
             <option value="">Choose a branch</option>
             {branches.map((b) => (
@@ -143,9 +145,9 @@ export function DeviceForm({
             ))}
           </Select>
         </Field>
-        <Field id="type" label="Type" error={errors.type}>
+        <Field id={fid("type")} label="Type" error={errors.type}>
           <Select
-            id="type"
+            id={fid("type")}
             value={values.type}
             onChange={(e) =>
               set("type", e.target.value as DeviceFormValues["type"])
@@ -161,26 +163,26 @@ export function DeviceForm({
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <Field
-          id="name"
+          id={fid("name")}
           label="Name"
           error={errors.name}
           hint="For example “Front counter” or “Grill screen”."
         >
           <Input
-            id="name"
+            id={fid("name")}
             value={values.name}
             onChange={(e) => set("name", e.target.value)}
-            {...invalid("name", errors.name)}
+            {...invalid(fid("name"), errors.name)}
           />
         </Field>
         <Field
-          id="code"
+          id={fid("code")}
           label="Short code"
           error={errors.code}
           hint="Unique in the branch. Starts offline order numbers, like T1-042."
         >
           <Input
-            id="code"
+            id={fid("code")}
             value={values.code}
             onChange={(e) => {
               setCodeEdited(true);
@@ -190,19 +192,19 @@ export function DeviceForm({
               }));
             }}
             className="max-w-32 font-mono uppercase"
-            {...invalid("code", errors.code)}
+            {...invalid(fid("code"), errors.code)}
           />
         </Field>
       </div>
       {values.type === "kds" ? (
         <Field
-          id="station"
+          id={fid("station")}
           label="Kitchen station"
           error={errors.station}
           hint="Leave empty to show every station."
         >
           <Input
-            id="station"
+            id={fid("station")}
             value={values.station}
             onChange={(e) => set("station", e.target.value)}
           />
@@ -210,11 +212,11 @@ export function DeviceForm({
       ) : null}
       <div className="flex items-center gap-3">
         <Checkbox
-          id="isActive"
+          id={fid("isActive")}
           checked={values.isActive}
           onCheckedChange={(checked) => set("isActive", checked === true)}
         />
-        <Label htmlFor="isActive">
+        <Label htmlFor={fid("isActive")}>
           Active (an inactive device is signed out and can&apos;t be used)
         </Label>
       </div>

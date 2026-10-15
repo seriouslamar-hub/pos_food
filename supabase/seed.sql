@@ -93,3 +93,12 @@ values
 
 insert into public.taxes (name, rate_bps, is_inclusive, tax_category, sort_order)
 values ('Sales tax', 1000, false, 'standard', 10);
+
+-- ---------------------------------------------------------------------------
+-- Sample menu, loaded as the seeded admin so permission checks and the audit
+-- log behave as they do for a real admin.
+-- ---------------------------------------------------------------------------
+
+select set_config('request.jwt.claims', '{"sub": "a0000000-0000-4000-8000-000000000001", "role": "authenticated"}', false);
+select public.load_sample_menu();
+select set_config('request.jwt.claims', '', false);

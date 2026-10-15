@@ -14,6 +14,7 @@ import {
   fieldErrors,
   type BranchFormValues,
 } from "@/lib/validation";
+import { useFieldIds } from "@/lib/use-field-ids";
 
 export type Option = { value: string; label: string };
 
@@ -28,6 +29,7 @@ export function BranchForm({
   timezones: string[];
   currencies: Option[];
 }) {
+  const fid = useFieldIds();
   const router = useRouter();
   const [values, setValues] = useState(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -72,27 +74,27 @@ export function BranchForm({
     >
       <FormError message={formError} />
 
-      <Field id="name" label="Name" error={errors.name}>
+      <Field id={fid("name")} label="Name" error={errors.name}>
         <Input
-          id="name"
+          id={fid("name")}
           value={values.name}
           onChange={(e) => set("name", e.target.value)}
-          {...invalid("name", errors.name)}
+          {...invalid(fid("name"), errors.name)}
         />
       </Field>
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field
-          id="timezone"
+          id={fid("timezone")}
           label="Timezone"
           error={errors.timezone}
           hint="Business days and receipts use this."
         >
           <Select
-            id="timezone"
+            id={fid("timezone")}
             value={values.timezone}
             onChange={(e) => set("timezone", e.target.value)}
-            {...invalid("timezone", errors.timezone)}
+            {...invalid(fid("timezone"), errors.timezone)}
           >
             <option value="">Choose a timezone</option>
             {timezones.map((tz) => (
@@ -102,12 +104,16 @@ export function BranchForm({
             ))}
           </Select>
         </Field>
-        <Field id="currencyCode" label="Currency" error={errors.currencyCode}>
+        <Field
+          id={fid("currencyCode")}
+          label="Currency"
+          error={errors.currencyCode}
+        >
           <Select
-            id="currencyCode"
+            id={fid("currencyCode")}
             value={values.currencyCode}
             onChange={(e) => set("currencyCode", e.target.value)}
-            {...invalid("currencyCode", errors.currencyCode)}
+            {...invalid(fid("currencyCode"), errors.currencyCode)}
           >
             <option value="">Choose a currency</option>
             {currencies.map((c) => (
@@ -120,16 +126,16 @@ export function BranchForm({
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field id="address" label="Address" error={errors.address}>
+        <Field id={fid("address")} label="Address" error={errors.address}>
           <Input
-            id="address"
+            id={fid("address")}
             value={values.address}
             onChange={(e) => set("address", e.target.value)}
           />
         </Field>
-        <Field id="phone" label="Phone" error={errors.phone}>
+        <Field id={fid("phone")} label="Phone" error={errors.phone}>
           <Input
-            id="phone"
+            id={fid("phone")}
             type="tel"
             value={values.phone}
             onChange={(e) => set("phone", e.target.value)}
@@ -138,26 +144,26 @@ export function BranchForm({
       </div>
 
       <Field
-        id="receiptHeader"
+        id={fid("receiptHeader")}
         label="Receipt header"
         error={errors.receiptHeader}
         hint="Printed at the top of every receipt."
       >
         <Textarea
-          id="receiptHeader"
+          id={fid("receiptHeader")}
           rows={2}
           value={values.receiptHeader}
           onChange={(e) => set("receiptHeader", e.target.value)}
         />
       </Field>
       <Field
-        id="receiptFooter"
+        id={fid("receiptFooter")}
         label="Receipt footer"
         error={errors.receiptFooter}
         hint="For example a thank-you note or tax number."
       >
         <Textarea
-          id="receiptFooter"
+          id={fid("receiptFooter")}
           rows={2}
           value={values.receiptFooter}
           onChange={(e) => set("receiptFooter", e.target.value)}
@@ -166,11 +172,11 @@ export function BranchForm({
 
       <div className="flex items-center gap-3">
         <Checkbox
-          id="isActive"
+          id={fid("isActive")}
           checked={values.isActive}
           onCheckedChange={(checked) => set("isActive", checked === true)}
         />
-        <Label htmlFor="isActive">
+        <Label htmlFor={fid("isActive")}>
           Active (inactive branches can&apos;t trade)
         </Label>
       </div>
