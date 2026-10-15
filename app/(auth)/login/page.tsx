@@ -1,14 +1,39 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "@/components/placeholder-page";
+import Link from "next/link";
+import { Suspense } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Sign in" };
 
-export default function Page() {
+export default function LoginPage() {
   return (
-    <PlaceholderPage
-      title="Sign in"
-      description="Email and password sign-in for admins and managers."
-      phase="Phase 2"
-    />
+    <main className="flex flex-1 items-center justify-center p-6">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle className="text-2xl">Sign in</CardTitle>
+          <CardDescription>
+            Back office for admins and managers.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-6">
+          <Suspense fallback={<div className="h-56" />}>
+            <LoginForm />
+          </Suspense>
+          <p className="text-sm text-muted-foreground">
+            Setting up a till or kitchen screen?{" "}
+            <Link href="/device/setup" className="underline underline-offset-4">
+              Device setup
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
+    </main>
   );
 }

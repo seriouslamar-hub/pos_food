@@ -69,11 +69,14 @@ select is(
     'current_device_id',
     'current_staff_id',
     'current_staff_role',
+    'end_pos_session',
     'has_permission',
     'is_admin',
     'is_device',
     'is_manager',
-    'set_staff_pin'
+    'set_staff_pin',
+    'start_pos_session',
+    'verify_override'
   ],
   'authenticated can execute only the allowed API functions'
 );

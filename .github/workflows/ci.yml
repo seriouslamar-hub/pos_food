@@ -22,3 +22,16 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+
+  database:
+    # Builds the database from the migrations and runs the pgTAP tests
+    # (RLS, permissions, PINs, overrides) against a throwaway local stack.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+      - name: Start Postgres and Auth only
+        run: supabase start -x studio,imgproxy,realtime,storage-api,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit
+      - run: supabase test db

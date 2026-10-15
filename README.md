@@ -66,17 +66,20 @@ All `.env*` files except `.env.example` are gitignored.
 
 ## Scripts
 
-| Command                 | What it does                                            |
-| ----------------------- | ------------------------------------------------------- |
-| `npm run dev`           | Start the app in development mode                       |
-| `npm run build`         | Production build                                        |
-| `npm run lint`          | ESLint                                                  |
-| `npm run typecheck`     | Generate Next.js route types and run `tsc --noEmit`     |
-| `npm test`              | Vitest unit tests                                       |
-| `npm run format`        | Format everything with Prettier                         |
-| `npm run db:new <name>` | Create an empty migration file                          |
-| `npm run db:reset`      | Rebuild the local database and load `supabase/seed.sql` |
-| `npm run db:test`       | Run the database tests                                  |
+| Command                                        | What it does                                                  |
+| ---------------------------------------------- | ------------------------------------------------------------- |
+| `npm run dev`                                  | Start the app in development mode                             |
+| `npm run build`                                | Production build                                              |
+| `npm run lint`                                 | ESLint                                                        |
+| `npm run typecheck`                            | Generate Next.js route types and run `tsc --noEmit`           |
+| `npm test`                                     | Vitest unit tests                                             |
+| `npm run format`                               | Format everything with Prettier                               |
+| `npm run db:new <name>`                        | Create an empty migration file                                |
+| `npm run db:reset`                             | Rebuild the local database and load `supabase/seed.sql`       |
+| `npm run db:test`                              | Run the database tests                                        |
+| `npm run db:types`                             | Regenerate `lib/supabase/database.types.ts` after a migration |
+| `npm run test:e2e`                             | Playwright end-to-end tests against the local database        |
+| `npm run admin:create -- --email … --name "…"` | Create the first admin in the project `.env.local` points to  |
 
 ## Database migrations
 
@@ -111,7 +114,24 @@ Add these secrets in GitHub → your repo → Settings → Secrets and variables
 2. Import it in Vercel and add `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY`. Leave the service role key unexposed to the browser.
 3. Every push to `main` deploys the app, and the migrations workflow updates the database.
 
-[.github/workflows/ci.yml](.github/workflows/ci.yml) runs lint, type-check and unit tests on every pull request and push to `main`.
+[.github/workflows/ci.yml](.github/workflows/ci.yml) runs lint, type-check and unit tests, and builds the database from the migrations to run the pgTAP tests, on every pull request and push to `main`.
+
+## Signing in
+
+- **Admins and managers** sign in at `/login` with email and password. Admins land on `/admin`, managers on `/manager`. Cashiers, devices and deactivated staff are refused.
+- **The first admin** of a new project is created with `npm run admin:create -- --email you@example.com --name "Your Name"`. It prints a temporary password once. After that, admins create staff from the back office (Phase 3).
+- **Tills, kitchen displays and pickup boards** are set up at `/device/setup`. An admin or manager signs in, picks the branch and device, and the browser is signed in as that device with a one-time token (devices have no password). It stays signed in after restarts.
+- **Cashiers** tap their 4–6 digit PIN on the till. Five wrong PINs within 5 minutes lock the till for a minute. The till locks itself after `till.auto_lock_minutes` without activity (default 5).
+- **Manager approval:** when a cashier lacks a permission, the till asks for the PIN of someone who has it. The approval lasts 2 minutes, works once, and every attempt is written to the audit log.
+
+## End-to-end tests
+
+```bash
+npm run db:start && npm run db:reset   # local stack with fresh seed data
+npm run test:e2e                        # starts the app on port 3100 against the local database
+```
+
+The tests read the local keys from `supabase status` and refuse to run against anything that isn't localhost, so they never touch production.
 
 ## Project structure
 
@@ -126,7 +146,12 @@ app/
   pickup                     customer pickup board
 components/                  shared UI (shadcn/ui primitives live in components/ui)
 lib/
-  supabase/                  client.ts (browser), server.ts (server), proxy.ts (session refresh)
+  supabase/                  client.ts (browser), server.ts (server), admin.ts (service role, server only),
+                             proxy.ts (session refresh and route protection), database.types.ts (generated)
+  auth.ts                    getSignedInUser, requireStaff for pages and Server Actions
+  permissions.ts             permission keys and can()
+  routes.ts                  which roles and devices may open which paths
+  till.ts, till-session.tsx  till session types, RPC parsing, usePermission()
   money.ts                   formatMoney, parseMoney
   offline/                   Dexie database, outbox, sync worker (Phase 9)
   payments/                  payment provider interface (Phase 6)
@@ -136,7 +161,8 @@ supabase/
   tests/                     pgTAP tests for RLS and functions
   functions/                 Edge Functions
   seed.sql                   local test data only
-tests/                       Playwright end-to-end tests
+scripts/                     one-off admin scripts (create the first admin)
+tests/e2e/                   Playwright end-to-end tests
 .github/workflows/           CI and database migrations
 ```
 
