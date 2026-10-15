@@ -9,6 +9,7 @@ import {
   SETTINGS,
   type SettingValue,
 } from "@/lib/settings";
+import { getMenuCurrency } from "@/lib/menu.server";
 import { createClient } from "@/lib/supabase/server";
 
 export type SettingInput = { value: string; useDefault: boolean };
@@ -25,6 +26,22 @@ export async function saveSettings(
     return { ok: false, error: "Only an admin can change settings." };
   }
 
+  const supabase = await createClient();
+  // Money settings are typed in the branch's currency (the main currency for
+  // the defaults), as on the settings page.
+  let currency: string;
+  if (branchId) {
+    const { data: branch } = await supabase
+      .from("branches")
+      .select("currency_code")
+      .eq("id", branchId)
+      .maybeSingle();
+    if (!branch) return { ok: false, error: "That branch doesn't exist." };
+    currency = branch.currency_code;
+  } else {
+    currency = await getMenuCurrency(supabase);
+  }
+
   const errors: Record<string, string> = {};
   const values: Record<string, SettingValue> = {};
   const clear: string[] = [];
@@ -35,7 +52,7 @@ export async function saveSettings(
       clear.push(def.key);
       continue;
     }
-    const parsed = parseSettingInput(def, input.value);
+    const parsed = parseSettingInput(def, input.value, currency);
     if (parsed.ok) values[def.key] = parsed.value;
     else errors[def.key] = parsed.error;
   }
@@ -48,7 +65,6 @@ export async function saveSettings(
     };
   }
 
-  const supabase = await createClient();
   const scoped = <
     T extends {
       is: (c: "branch_id", v: null) => T;

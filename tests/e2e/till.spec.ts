@@ -3,6 +3,7 @@ import {
   enterPin,
   localAdmin,
   open,
+  openShifts,
   resetTill,
   SEED,
   setUpTill,
@@ -12,6 +13,7 @@ import {
 test.describe("till", () => {
   test.beforeEach(async ({ page }) => {
     await resetTill();
+    await openShifts();
     await setUpTill(page);
   });
 
@@ -93,11 +95,17 @@ test.describe("till", () => {
 
   test("a manager PIN approves a protected action", async ({ page }) => {
     await enterPin(page, SEED.cashier.pin);
-    await page.getByRole("button", { name: "No sale (open drawer)" }).click();
+    await page.getByRole("button", { name: "Cash", exact: true }).click();
+    await page
+      .getByRole("dialog", { name: "Cash" })
+      .getByRole("button", { name: "No sale" })
+      .click();
+    const noSale = page.getByRole("dialog", { name: "No sale" });
+    await noSale.getByLabel("Reason").fill("Customer needs change");
+    await noSale.getByRole("button", { name: "Record no sale" }).click();
 
     const dialog = page.getByRole("dialog", { name: "Manager approval" });
     await expect(dialog).toBeVisible();
-    await dialog.getByLabel("Reason").fill("Customer needs change");
 
     // Another cashier can't approve it.
     await enterPin(dialog, SEED.cashier2.pin, "Approve");
@@ -107,28 +115,51 @@ test.describe("till", () => {
     await enterPin(dialog, SEED.manager.pin, "Approve");
     await expect(dialog).toBeHidden();
     await expect(page.getByTestId("till-action-result")).toHaveText(
-      new RegExp(`^Approved by ${SEED.manager.name}`),
+      `No sale recorded, approved by ${SEED.manager.name}. The drawer is open.`,
     );
 
-    const { data } = await localAdmin()
+    const db = localAdmin();
+    const { data } = await db
       .from("audit_log")
       .select("action, reason")
       .eq("device_id", SEED.tillDeviceId)
-      .in("action", ["override.approved", "override.denied"])
+      .in("action", ["override.approved", "override.denied", "cash.no_sale"])
       .order("id", { ascending: false })
-      .limit(2);
+      .limit(3);
     expect(data).toEqual([
+      { action: "cash.no_sale", reason: "Customer needs change" },
       { action: "override.approved", reason: "Customer needs change" },
       { action: "override.denied", reason: "Customer needs change" },
     ]);
+    const { data: movement } = await db
+      .from("cash_movements")
+      .select("type, amount, approved_by")
+      .eq("device_id", SEED.tillDeviceId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+    expect(movement).toEqual({
+      type: "no_sale",
+      amount: 0,
+      approved_by: SEED.manager.id,
+    });
   });
 
   test("staff with the permission don't need an approval", async ({ page }) => {
     await enterPin(page, SEED.manager.pin);
-    await page.getByRole("button", { name: "No sale (open drawer)" }).click();
-    await expect(page.getByRole("dialog")).toBeHidden();
+    await page.getByRole("button", { name: "Cash", exact: true }).click();
+    await page
+      .getByRole("dialog", { name: "Cash" })
+      .getByRole("button", { name: "No sale" })
+      .click();
+    const noSale = page.getByRole("dialog", { name: "No sale" });
+    await noSale.getByLabel("Reason").fill("Till roll check");
+    await noSale.getByRole("button", { name: "Record no sale" }).click();
+    await expect(
+      page.getByRole("dialog", { name: "Manager approval" }),
+    ).toHaveCount(0);
     await expect(page.getByTestId("till-action-result")).toHaveText(
-      /^Allowed\./,
+      "No sale recorded. The drawer is open.",
     );
   });
 

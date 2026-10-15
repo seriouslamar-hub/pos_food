@@ -206,6 +206,152 @@ export type Database = {
         }
         Relationships: []
       }
+      business_days: {
+        Row: {
+          branch_id: string
+          business_date: string
+          closed_at: string | null
+          closed_by: string | null
+          id: string
+          opened_at: string
+          opened_by: string | null
+          status: Database["public"]["Enums"]["business_day_status"]
+          z_report: Json | null
+        }
+        Insert: {
+          branch_id: string
+          business_date: string
+          closed_at?: string | null
+          closed_by?: string | null
+          id?: string
+          opened_at?: string
+          opened_by?: string | null
+          status?: Database["public"]["Enums"]["business_day_status"]
+          z_report?: Json | null
+        }
+        Update: {
+          branch_id?: string
+          business_date?: string
+          closed_at?: string | null
+          closed_by?: string | null
+          id?: string
+          opened_at?: string
+          opened_by?: string | null
+          status?: Database["public"]["Enums"]["business_day_status"]
+          z_report?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_days_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_days_closed_by_fkey"
+            columns: ["closed_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_days_opened_by_fkey"
+            columns: ["opened_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_movements: {
+        Row: {
+          amount: number
+          approved_by: string | null
+          branch_id: string
+          client_created_at: string | null
+          created_at: string
+          device_id: string | null
+          id: string
+          pos_session_id: string | null
+          reason: string | null
+          shift_id: string
+          staff_id: string
+          type: Database["public"]["Enums"]["cash_movement_type"]
+        }
+        Insert: {
+          amount: number
+          approved_by?: string | null
+          branch_id: string
+          client_created_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          id: string
+          pos_session_id?: string | null
+          reason?: string | null
+          shift_id: string
+          staff_id: string
+          type: Database["public"]["Enums"]["cash_movement_type"]
+        }
+        Update: {
+          amount?: number
+          approved_by?: string | null
+          branch_id?: string
+          client_created_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          id?: string
+          pos_session_id?: string | null
+          reason?: string | null
+          shift_id?: string
+          staff_id?: string
+          type?: Database["public"]["Enums"]["cash_movement_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_movements_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_movements_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_movements_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_movements_pos_session_id_fkey"
+            columns: ["pos_session_id"]
+            isOneToOne: false
+            referencedRelation: "pos_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_movements_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_movements_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           colour: string | null
@@ -883,6 +1029,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orders_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_staff_id_fkey"
             columns: ["staff_id"]
             isOneToOne: false
@@ -1087,6 +1240,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payments_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "payments_staff_id_fkey"
             columns: ["staff_id"]
             isOneToOne: false
@@ -1223,6 +1383,122 @@ export type Database = {
           },
         ]
       }
+      shifts: {
+        Row: {
+          branch_id: string
+          business_day_id: string
+          closed_at: string | null
+          closed_by: string | null
+          counted_cash: number | null
+          counted_denominations: Json | null
+          device_id: string
+          expected_cash: number | null
+          id: string
+          opened_at: string
+          opening_denominations: Json | null
+          opening_float: number
+          pos_session_id: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          staff_id: string
+          status: Database["public"]["Enums"]["shift_status"]
+          variance: number | null
+        }
+        Insert: {
+          branch_id: string
+          business_day_id: string
+          closed_at?: string | null
+          closed_by?: string | null
+          counted_cash?: number | null
+          counted_denominations?: Json | null
+          device_id: string
+          expected_cash?: number | null
+          id?: string
+          opened_at?: string
+          opening_denominations?: Json | null
+          opening_float: number
+          pos_session_id?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          staff_id: string
+          status?: Database["public"]["Enums"]["shift_status"]
+          variance?: number | null
+        }
+        Update: {
+          branch_id?: string
+          business_day_id?: string
+          closed_at?: string | null
+          closed_by?: string | null
+          counted_cash?: number | null
+          counted_denominations?: Json | null
+          device_id?: string
+          expected_cash?: number | null
+          id?: string
+          opened_at?: string
+          opening_denominations?: Json | null
+          opening_float?: number
+          pos_session_id?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          staff_id?: string
+          status?: Database["public"]["Enums"]["shift_status"]
+          variance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shifts_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shifts_business_day_id_fkey"
+            columns: ["business_day_id"]
+            isOneToOne: false
+            referencedRelation: "business_days"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shifts_closed_by_fkey"
+            columns: ["closed_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shifts_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shifts_pos_session_id_fkey"
+            columns: ["pos_session_id"]
+            isOneToOne: false
+            referencedRelation: "pos_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shifts_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shifts_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff: {
         Row: {
           auth_user_id: string | null
@@ -1324,7 +1600,24 @@ export type Database = {
         Args: { p_branch_id: string; p_key: string }
         Returns: Json
       }
+      business_day_summary: { Args: { p_day_id: string }; Returns: Json }
       can_access_branch: { Args: { p_branch_id: string }; Returns: boolean }
+      close_business_day: {
+        Args: {
+          p_branch_id?: string
+          p_override_id?: string
+          p_session_id?: string
+        }
+        Returns: Json
+      }
+      close_shift: {
+        Args: {
+          p_counted_denominations: Json
+          p_session_id: string
+          p_shift_id?: string
+        }
+        Returns: Json
+      }
       consume_override: {
         Args: {
           p_branch_id: string
@@ -1333,6 +1626,7 @@ export type Database = {
         }
         Returns: string
       }
+      count_denominations: { Args: { p_counts: Json }; Returns: number }
       current_branch_id: { Args: never; Returns: string }
       current_device: {
         Args: never
@@ -1386,12 +1680,27 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["staff_role"]
       }
+      day_control_actor: {
+        Args: {
+          p_branch_id: string
+          p_override_id: string
+          p_session_id: string
+        }
+        Returns: {
+          approver_id: string
+          branch_id: string
+          device_id: string
+          staff_id: string
+        }[]
+      }
+      day_report: { Args: { p_day_id: string }; Returns: Json }
       device_heartbeat: { Args: never; Returns: undefined }
       end_pos_session: { Args: { p_session_id: string }; Returns: undefined }
       find_staff_by_pin: {
         Args: { p_branch_id: string; p_pin: string }
         Returns: string
       }
+      get_day_report: { Args: { p_day_id: string }; Returns: Json }
       get_menu: { Args: { p_branch_id: string }; Returns: Json }
       get_order: { Args: { p_order_id: string }; Returns: Json }
       has_permission: { Args: { p_permission: string }; Returns: boolean }
@@ -1402,7 +1711,24 @@ export type Database = {
         Args: { p_gross: number; p_tax_category: string }
         Returns: Json
       }
+      list_open_shifts: { Args: { p_session_id: string }; Returns: Json }
       load_sample_menu: { Args: never; Returns: undefined }
+      open_business_day: {
+        Args: {
+          p_branch_id?: string
+          p_override_id?: string
+          p_session_id?: string
+        }
+        Returns: Json
+      }
+      open_shift: {
+        Args: {
+          p_denominations?: Json
+          p_opening_float: number
+          p_session_id: string
+        }
+        Returns: Json
+      }
       order_line_combo: {
         Args: { p_branch_id: string; p_combo_id: string; p_selections: Json }
         Returns: Json
@@ -1417,6 +1743,10 @@ export type Database = {
       }
       order_summary: { Args: { p_order_id: string }; Returns: Json }
       pin_lockout_seconds: { Args: { p_device_id: string }; Returns: number }
+      record_cash_movement: {
+        Args: { p_movement: Json; p_session_id: string }
+        Returns: Json
+      }
       record_payments: {
         Args: { p_order_id: string; p_payments: Json; p_session_id: string }
         Returns: Json
@@ -1424,6 +1754,36 @@ export type Database = {
       reorder_menu: {
         Args: { p_ids: string[]; p_kind: string; p_parent_id?: string }
         Returns: undefined
+      }
+      require_open_shift: {
+        Args: { p_device_id: string; p_staff_id: string }
+        Returns: {
+          branch_id: string
+          business_day_id: string
+          closed_at: string | null
+          closed_by: string | null
+          counted_cash: number | null
+          counted_denominations: Json | null
+          device_id: string
+          expected_cash: number | null
+          id: string
+          opened_at: string
+          opening_denominations: Json | null
+          opening_float: number
+          pos_session_id: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          staff_id: string
+          status: Database["public"]["Enums"]["shift_status"]
+          variance: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "shifts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       require_pos_session: {
         Args: { p_session_id: string }
@@ -1442,9 +1802,17 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      review_shift: {
+        Args: { p_note?: string; p_shift_id: string; p_status: string }
+        Returns: Json
+      }
       round_div: {
         Args: { p_denominator: number; p_numerator: number }
         Returns: number
+      }
+      sales_summary: {
+        Args: { p_day_id: string; p_shift_id: string }
+        Returns: Json
       }
       send_order_lines_to_kitchen: {
         Args: { p_order_id: string }
@@ -1475,6 +1843,14 @@ export type Database = {
         Args: { p_pin: string; p_staff_id: string }
         Returns: undefined
       }
+      shift_cash: { Args: { p_shift_id: string }; Returns: Json }
+      shift_expected_cash: { Args: { p_shift_id: string }; Returns: number }
+      shift_manager_view: { Args: { p_shift_id: string }; Returns: Json }
+      shift_report: {
+        Args: { p_for_manager: boolean; p_shift_id: string }
+        Returns: Json
+      }
+      shift_summary: { Args: { p_shift_id: string }; Returns: Json }
       staff_has_permission: {
         Args: { p_permission: string; p_staff_id: string }
         Returns: boolean
@@ -1485,6 +1861,7 @@ export type Database = {
         Args: { p_order: Json; p_session_id: string }
         Returns: Json
       }
+      till_state: { Args: { p_session_id: string }; Returns: Json }
       verify_override: {
         Args: {
           p_permission: string
@@ -1510,8 +1887,11 @@ export type Database = {
         }
         Returns: number
       }
+      x_report: { Args: { p_session_id: string }; Returns: Json }
     }
     Enums: {
+      business_day_status: "open" | "closed"
+      cash_movement_type: "drop" | "paid_in" | "paid_out" | "no_sale"
       device_type: "till" | "kds" | "pickup" | "kiosk"
       menu_item_type: "item" | "combo"
       order_channel: "counter" | "kiosk" | "online" | "drive_thru"
@@ -1528,6 +1908,7 @@ export type Database = {
       order_type: "dine_in" | "takeaway" | "delivery"
       payment_method_type: "cash" | "card" | "mobile_money" | "other"
       payment_status: "captured" | "refunded"
+      shift_status: "open" | "pending_review" | "approved" | "flagged"
       staff_role: "admin" | "manager" | "cashier"
     }
     CompositeTypes: {
@@ -1656,6 +2037,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      business_day_status: ["open", "closed"],
+      cash_movement_type: ["drop", "paid_in", "paid_out", "no_sale"],
       device_type: ["till", "kds", "pickup", "kiosk"],
       menu_item_type: ["item", "combo"],
       order_channel: ["counter", "kiosk", "online", "drive_thru"],
@@ -1673,6 +2056,7 @@ export const Constants = {
       order_type: ["dine_in", "takeaway", "delivery"],
       payment_method_type: ["cash", "card", "mobile_money", "other"],
       payment_status: ["captured", "refunded"],
+      shift_status: ["open", "pending_review", "approved", "flagged"],
       staff_role: ["admin", "manager", "cashier"],
     },
   },

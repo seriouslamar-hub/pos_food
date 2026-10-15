@@ -138,6 +138,13 @@ Add these secrets in GitHub → your repo → Settings → Secrets and variables
 - **Pay later:** with `orders.pay_later_dine_in` on, dine-in orders can go to the kitchen before payment. **Unpaid orders** on the till lists them (and any order whose payment didn't finish) for payment later.
 - Card and mobile money are recorded manually for now (`lib/payments/provider.ts`). Integrated terminals and mobile money prompts will plug in there through an Edge Function and webhook.
 
+### Business days, shifts and cash
+
+- **The business day** is opened by a manager (from **Business day** in the back office, or on the till with a manager's PIN) before anyone can sell. Orders take the open day's date, even after midnight. Closing the day needs every shift closed; it stores and prints the **Z report**.
+- **Shifts:** after their PIN, each cashier opens their own shift on that till by counting the float note by note (the notes and coins come from the `cash.denominations` setting, or the usual ones for the branch's currency). Every order and payment belongs to the shift that took it.
+- **Cash** on the till: cash drops, paid in and paid out (a manager approves these), no-sale (approval for cashiers), the **X report** for the shift so far, and **Close my shift**.
+- **Blind count:** closing a shift means counting the drawer without being told what it should hold. Expected cash = float + cash sales (after change) + paid in − paid out − drops. The difference waits for a manager to approve or flag it on the **Business day** page, where differences above `cash.variance_alert` are highlighted. A manager can count and close a shift someone forgot, from the till's **End of day**.
+
 ### Receipts, kitchen tickets and the cash drawer
 
 The till prints through the browser (`lib/printing.ts`): receipts after a sale when `receipt.auto_print` is on (or with **Print receipt**), **Reprint last receipt** (marked COPY), and kitchen tickets when `print.kitchen_tickets` is on, for kitchens without a screen. To set up a till's printer:

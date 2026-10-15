@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { PinKeypad } from "@/components/pin-keypad";
 import { PrintHost } from "@/components/print-host";
 import { OrderScreen } from "@/components/till/order-screen";
+import { ShiftGate } from "@/components/till/shift-gate";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,8 @@ type TillAppProps = {
   deviceName: string;
   deviceCode: string;
   branchName: string;
+  currency: string;
+  timezone: string;
   settings: TillSettings;
 };
 
@@ -33,6 +36,8 @@ export function TillApp({
   deviceName,
   deviceCode,
   branchName,
+  currency,
+  timezone,
   settings,
 }: TillAppProps) {
   const { autoLockMinutes } = settings;
@@ -87,11 +92,20 @@ export function TillApp({
 
       {session ? (
         <TillSessionProvider session={session} lock={lock}>
-          <OrderScreen
-            branchId={branchId}
-            deviceId={deviceId}
+          <ShiftGate
+            branch={{ name: branchName, currency_code: currency, timezone }}
             settings={settings}
-          />
+          >
+            {(shift, reload) => (
+              <OrderScreen
+                branchId={branchId}
+                deviceId={deviceId}
+                settings={settings}
+                shift={shift}
+                onShiftEnded={reload}
+              />
+            )}
+          </ShiftGate>
         </TillSessionProvider>
       ) : (
         <LockScreen

@@ -37,6 +37,14 @@ insert into public.devices (id, branch_id, auth_user_id, name, type, code) value
    'f0000000-0000-4000-8000-000000000301', 'Pay Till A', 'till', 'T1'),
   ('f3000000-0000-4000-8000-000000000302', 'f1000000-0000-4000-8000-00000000030b',
    'f0000000-0000-4000-8000-000000000302', 'Pay Till B', 'till', 'T1');
+insert into public.business_days (id, branch_id, business_date) values
+  ('f8000000-0000-4000-8000-00000000030a', 'f1000000-0000-4000-8000-00000000030a', current_date),
+  ('f8000000-0000-4000-8000-00000000030b', 'f1000000-0000-4000-8000-00000000030b', current_date);
+insert into public.shifts (branch_id, business_day_id, staff_id, device_id, opening_float) values
+  ('f1000000-0000-4000-8000-00000000030a', 'f8000000-0000-4000-8000-00000000030a',
+   'f2000000-0000-4000-8000-000000000301', 'f3000000-0000-4000-8000-000000000301', 0),
+  ('f1000000-0000-4000-8000-00000000030b', 'f8000000-0000-4000-8000-00000000030b',
+   'f2000000-0000-4000-8000-000000000302', 'f3000000-0000-4000-8000-000000000302', 0);
 insert into public.categories (id, name) values ('f5000000-0000-4000-8000-000000000301', 'Pay test');
 insert into public.menu_items (id, category_id, name, base_price, tax_category) values
   ('f5300000-0000-4000-8000-000000000301', 'f5000000-0000-4000-8000-000000000301', 'Pay burger', 1000, 'paytest_none');

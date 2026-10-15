@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ManagerOverride } from "@/components/manager-override";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,10 +35,17 @@ import { priceCart } from "@/lib/pricing";
 import { getPrinterDriver, type PrintJob } from "@/lib/printing";
 import type { Json } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/client";
-import { isSessionEndedError, type TillSettings } from "@/lib/till";
-import { usePermission, useTillSession } from "@/lib/till-session";
+import { NO_SHIFT_CODE, type ShiftSummary } from "@/lib/shifts";
+import {
+  isReadableError,
+  isSessionEndedError,
+  rpcErrorMessage,
+  type TillSettings,
+} from "@/lib/till";
+import { useTillSession } from "@/lib/till-session";
 import { useLiveMenu } from "@/lib/use-live-menu";
 import { CartPanel } from "./cart-panel";
+import { CashActions } from "./cash-actions";
 import { ItemSheet } from "./item-sheet";
 import { MenuGrid } from "./menu-grid";
 import { PaymentScreen } from "./payment-screen";
@@ -50,15 +56,6 @@ const newId = () => crypto.randomUUID();
 const printer = getPrinterDriver();
 
 type RpcError = { code?: string; message: string };
-
-/** Errors the database words for people; anything else is likely the connection. */
-const READABLE_CODES = new Set(["22023", "42501", "P0002"]);
-
-function rpcMessage(error: RpcError): string {
-  return READABLE_CODES.has(error.code ?? "")
-    ? error.message
-    : "Couldn't reach the server. Check the connection and try again.";
-}
 
 /**
  * Taking payment for the cart (saved as an order when the payments are in)
@@ -84,10 +81,16 @@ export function OrderScreen({
   branchId,
   deviceId,
   settings,
+  shift,
+  onShiftEnded,
 }: {
   branchId: string;
   deviceId: string;
   settings: TillSettings;
+  /** The cashier's open shift: orders and payments go to it. */
+  shift: ShiftSummary;
+  /** The shift was closed (e.g. by a manager at another till). */
+  onShiftEnded: () => void;
 }) {
   const { session, lock } = useTillSession();
   const [supabase] = useState(createClient);
@@ -163,11 +166,20 @@ export function OrderScreen({
     }
   }
 
-  /** Locks the till if the server says the session is over. */
+  /**
+   * Locks the till if the server says the session is over, and goes back to
+   * the shift screen if the shift was closed. True if either happened.
+   */
   function sessionEnded(rpcError: RpcError | null): boolean {
-    if (!isSessionEndedError(rpcError)) return false;
-    lock("Your session ended. Sign in again.");
-    return true;
+    if (isSessionEndedError(rpcError)) {
+      lock("Your session ended. Sign in again.");
+      return true;
+    }
+    if (rpcError?.code === NO_SHIFT_CODE) {
+      onShiftEnded();
+      return true;
+    }
+    return false;
   }
 
   /** Saves the cart as an order. Safe to repeat: the order keeps the cart's id. */
@@ -253,9 +265,9 @@ export function OrderScreen({
         const saved = await saveCart(current.cart);
         if ("error" in saved) {
           if (sessionEnded(saved.error)) return;
-          const unsure = !READABLE_CODES.has(saved.error.code ?? "");
+          const unsure = !isReadableError(saved.error);
           setCheckout({ ...current, unsure: current.unsure || unsure });
-          setCheckoutError(rpcMessage(saved.error));
+          setCheckoutError(rpcErrorMessage(saved.error));
           return;
         }
         order = saved.order;
@@ -296,7 +308,7 @@ export function OrderScreen({
             return finishSale(saved, ticketPrinted);
         }
         setCheckout({ ...current, order, cart: null, paymentTried: true });
-        setCheckoutError(rpcMessage(rpcError));
+        setCheckoutError(rpcErrorMessage(rpcError));
         return;
       }
       finishSale(parseOrderSummary(data), ticketPrinted);
@@ -363,8 +375,8 @@ export function OrderScreen({
       const saved = await saveCart(current);
       if ("error" in saved) {
         if (sessionEnded(saved.error)) return;
-        setError(rpcMessage(saved.error));
-        if (!READABLE_CODES.has(saved.error.code ?? "")) {
+        setError(rpcErrorMessage(saved.error));
+        if (!isReadableError(saved.error)) {
           // It may have been saved (unsent) anyway; it would show under
           // Unpaid orders. Keep the cart apart from it.
           const freshId = newId();
@@ -381,7 +393,7 @@ export function OrderScreen({
         if (sessionEnded(rpcError)) return;
         setNotice({
           order: saved.order,
-          message: `is saved but didn't reach the kitchen (${rpcMessage(rpcError)}). Take payment from Unpaid orders to send it.`,
+          message: `is saved but didn't reach the kitchen (${rpcErrorMessage(rpcError)}). Take payment from Unpaid orders to send it.`,
         });
         return;
       }
@@ -405,7 +417,7 @@ export function OrderScreen({
     });
     if (rpcError) {
       if (sessionEnded(rpcError)) return null;
-      return rpcMessage(rpcError);
+      return rpcErrorMessage(rpcError);
     }
     const order = parseOrderSummary(data);
     if (order.paid_at) return `Order ${order.order_number} is already paid.`;
@@ -443,7 +455,7 @@ export function OrderScreen({
   return (
     <div className="flex min-h-0 flex-1">
       <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 p-3">
-        <TillTools>
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <UnpaidOrders
             branchId={branchId}
             currency={menu.currency_code}
@@ -463,7 +475,21 @@ export function OrderScreen({
           >
             Reprint last receipt
           </Button>
-        </TillTools>
+          <CashActions
+            shift={shift}
+            branch={{
+              name: menu.branch_name,
+              currency_code: menu.currency_code,
+              timezone: menu.timezone,
+            }}
+            settings={settings}
+            onShiftClosed={(closed) =>
+              lock(
+                `Shift closed. You counted ${formatAmount(closed.counted_cash ?? 0, menu.currency_code)}. Hand the cash to your manager.`,
+              )
+            }
+          />
+        </div>
         {notice ? (
           <OrderNotice
             notice={notice}
@@ -623,57 +649,6 @@ function OrderNotice({
         </Button>
       </AlertDescription>
     </Alert>
-  );
-}
-
-/** Till actions that aren't part of an order (no sale needs approval). */
-function TillTools({ children }: { children?: ReactNode }) {
-  const canNoSale = usePermission("drawer.no_sale");
-  const [overrideOpen, setOverrideOpen] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap justify-end gap-2">
-        {children}
-        <Button
-          size="lg"
-          variant="outline"
-          className="h-12 px-4 text-base"
-          onClick={() => {
-            setResult(null);
-            if (canNoSale)
-              setResult(
-                "Allowed. The drawer will open here once cash management is built (Phase 7).",
-              );
-            else setOverrideOpen(true);
-          }}
-        >
-          No sale (open drawer)
-        </Button>
-      </div>
-      {result ? (
-        <Alert aria-live="polite">
-          <AlertDescription
-            className="text-base"
-            data-testid="till-action-result"
-          >
-            {result}
-          </AlertDescription>
-        </Alert>
-      ) : null}
-      <ManagerOverride
-        open={overrideOpen}
-        onOpenChange={setOverrideOpen}
-        permission="drawer.no_sale"
-        actionLabel="Opening the drawer without a sale"
-        requireReason
-        onApproved={(approval) =>
-          setResult(
-            `Approved by ${approval.approverName}. The drawer will open here once cash management is built (Phase 7).`,
-          )
-        }
-      />
-    </div>
   );
 }
 

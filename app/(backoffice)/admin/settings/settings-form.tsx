@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { saveSettings, type SettingInput } from "@/lib/actions/settings";
 import {
+  describeSetting,
   parseSettingInput,
   SETTINGS,
   settingToInput,
@@ -19,11 +20,14 @@ import { useFieldIds } from "@/lib/use-field-ids";
 export function SettingsForm({
   branchId,
   branches,
+  currency,
   defaults,
   overrides,
 }: {
   branchId: string | null;
   branches: { id: string; name: string }[];
+  /** Money settings are typed in this currency. */
+  currency: string;
   defaults: Record<string, SettingValue>;
   overrides: Record<string, SettingValue>;
 }) {
@@ -39,6 +43,7 @@ export function SettingsForm({
             value: settingToInput(
               def,
               own ?? defaults[def.key] ?? def.fallback,
+              currency,
             ),
             useDefault: branchId !== null && own === undefined,
           },
@@ -62,7 +67,7 @@ export function SettingsForm({
     for (const def of SETTINGS) {
       const input = inputs[def.key];
       if (branchId && input.useDefault) continue;
-      const parsed = parseSettingInput(def, input.value);
+      const parsed = parseSettingInput(def, input.value, currency);
       if (!parsed.ok) clientErrors[def.key] = parsed.error;
     }
     setErrors(clientErrors);
@@ -122,6 +127,7 @@ export function SettingsForm({
             input={inputs[def.key]}
             error={errors[def.key]}
             defaultValue={defaults[def.key] ?? def.fallback}
+            currency={currency}
             branchScope={branchId !== null}
             onChange={(patch) => update(def.key, patch)}
           />
@@ -137,19 +143,12 @@ export function SettingsForm({
   );
 }
 
-function describe(def: SettingDefinition, value: SettingValue): string {
-  if (def.kind === "boolean") return value ? "Yes" : "No";
-  if (def.kind === "choice")
-    return def.options.find((o) => o.value === value)?.label ?? String(value);
-  if (def.kind === "percent") return `${settingToInput(def, value)}%`;
-  return String(value);
-}
-
 function SettingField({
   def,
   input,
   error,
   defaultValue,
+  currency,
   branchScope,
   onChange,
 }: {
@@ -157,6 +156,7 @@ function SettingField({
   input: SettingInput;
   error?: string;
   defaultValue: SettingValue;
+  currency: string;
   branchScope: boolean;
   onChange: (patch: Partial<SettingInput>) => void;
 }) {
@@ -187,10 +187,20 @@ function SettingField({
           </option>
         ))}
       </Select>
+    ) : def.kind === "denominations" ? (
+      <Input
+        id={id}
+        value={input.value}
+        disabled={disabled}
+        onChange={(e) => onChange({ value: e.target.value })}
+        aria-invalid={error ? true : undefined}
+      />
     ) : (
       <Input
         id={id}
-        inputMode={def.kind === "percent" ? "decimal" : "numeric"}
+        inputMode={
+          def.kind === "percent" || def.kind === "money" ? "decimal" : "numeric"
+        }
         value={input.value}
         disabled={disabled}
         onChange={(e) => onChange({ value: e.target.value })}
@@ -198,10 +208,14 @@ function SettingField({
         className="max-w-40"
       />
     );
+  const label =
+    def.kind === "money" || def.kind === "denominations"
+      ? `${def.label} (${currency})`
+      : def.label;
 
   return (
     <div className="flex flex-col gap-2 rounded-xl border p-4">
-      <Field id={id} label={def.label} error={error} hint={def.help}>
+      <Field id={id} label={label} error={error} hint={def.help}>
         {control}
       </Field>
       {branchScope ? (
@@ -213,12 +227,12 @@ function SettingField({
                 useDefault: checked === true,
                 value:
                   checked === true
-                    ? settingToInput(def, defaultValue)
+                    ? settingToInput(def, defaultValue, currency)
                     : input.value,
               })
             }
           />
-          Use default ({describe(def, defaultValue)})
+          Use default ({describeSetting(def, defaultValue, currency)})
         </label>
       ) : null}
     </div>

@@ -3,7 +3,7 @@
  * verify_override). Pure functions, safe to import anywhere.
  */
 import { toPaperWidth, type PaperWidth } from "./printing";
-import { effectiveSetting } from "./settings";
+import { denominationsFor, effectiveSetting } from "./settings";
 
 export type StaffRole = "admin" | "manager" | "cashier";
 
@@ -35,6 +35,31 @@ export type OverrideApproval = {
 
 /** SQLSTATE raised when a till session has ended (see the Phase 2 migration). */
 export const SESSION_ENDED_CODE = "PS401";
+
+/** RPC errors whose messages are written for the cashier (see the migrations). */
+const READABLE_CODES = new Set([
+  "22023",
+  "42501",
+  "P0002",
+  "PS403",
+  "PS410",
+  "PS411",
+]);
+
+/** Whether the server refused the request (as opposed to not being reached). */
+export function isReadableError(error: { code?: string } | null): boolean {
+  return READABLE_CODES.has(error?.code ?? "");
+}
+
+/** A till RPC error as a message for the cashier. */
+export function rpcErrorMessage(error: {
+  code?: string;
+  message: string;
+}): string {
+  return isReadableError(error)
+    ? error.message
+    : "Couldn't reach the server. Check the connection and try again.";
+}
 
 export function isSessionEndedError(
   error: { code?: string } | null | undefined,
@@ -122,6 +147,7 @@ export const TILL_SETTING_KEYS = [
   "receipt.auto_print",
   "print.kitchen_tickets",
   "receipt.paper_width_mm",
+  "cash.denominations",
 ] as const;
 
 export type TillSettings = {
@@ -130,11 +156,14 @@ export type TillSettings = {
   autoPrintReceipt: boolean;
   kitchenTickets: boolean;
   paperWidth: PaperWidth;
+  /** Notes and coins to count, largest first, in minor units. */
+  denominations: number[];
 };
 
 export function tillSettings(
   rows: { key: string; branch_id: string | null; value: unknown }[] | null,
   branchId: string,
+  currency: string,
 ): TillSettings {
   const value = (key: (typeof TILL_SETTING_KEYS)[number]) =>
     effectiveSetting(key, rows, branchId);
@@ -144,5 +173,6 @@ export function tillSettings(
     autoPrintReceipt: value("receipt.auto_print") === true,
     kitchenTickets: value("print.kitchen_tickets") === true,
     paperWidth: toPaperWidth(value("receipt.paper_width_mm")),
+    denominations: denominationsFor(rows, branchId, currency),
   };
 }

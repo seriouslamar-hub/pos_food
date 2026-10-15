@@ -32,7 +32,7 @@ async function Till() {
   const [{ data: branch }, { data: settingRows }] = await Promise.all([
     supabase
       .from("branches")
-      .select("name")
+      .select("name, currency_code, timezone")
       .eq("id", user.device.branchId)
       .single(),
     supabase
@@ -48,7 +48,13 @@ async function Till() {
       deviceName={user.device.name}
       deviceCode={user.device.code}
       branchName={branch?.name ?? ""}
-      settings={tillSettings(settingRows, user.device.branchId)}
+      currency={branch?.currency_code ?? "USD"}
+      timezone={branch?.timezone ?? "UTC"}
+      settings={tillSettings(
+        settingRows,
+        user.device.branchId,
+        branch?.currency_code ?? "USD",
+      )}
     />
   );
 }

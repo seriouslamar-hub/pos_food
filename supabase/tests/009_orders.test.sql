@@ -41,6 +41,16 @@ insert into public.devices (id, branch_id, auth_user_id, name, type, code) value
   ('f3000000-0000-4000-8000-000000000202', 'f1000000-0000-4000-8000-00000000020b',
    'f0000000-0000-4000-8000-000000000202', 'Order Till B', 'till', 'T1');
 
+-- Selling needs an open business day and shift (Phase 7).
+insert into public.business_days (id, branch_id, business_date) values
+  ('f8000000-0000-4000-8000-00000000020a', 'f1000000-0000-4000-8000-00000000020a', current_date),
+  ('f8000000-0000-4000-8000-00000000020b', 'f1000000-0000-4000-8000-00000000020b', current_date);
+insert into public.shifts (branch_id, business_day_id, staff_id, device_id, opening_float) values
+  ('f1000000-0000-4000-8000-00000000020a', 'f8000000-0000-4000-8000-00000000020a',
+   'f2000000-0000-4000-8000-000000000201', 'f3000000-0000-4000-8000-000000000201', 0),
+  ('f1000000-0000-4000-8000-00000000020b', 'f8000000-0000-4000-8000-00000000020b',
+   'f2000000-0000-4000-8000-000000000202', 'f3000000-0000-4000-8000-000000000202', 0);
+
 insert into public.taxes (name, rate_bps, is_inclusive, tax_category, sort_order) values
   ('Ex 15', 1500, false, 'ordtest_ex', 1),
   ('Inc 15', 1500, true, 'ordtest_inc', 1),

@@ -59,6 +59,16 @@ const ACTION_LABELS: Record<string, string> = {
   "order.create": "Order taken",
   "order.paid": "Order paid",
   "order.sent_to_kitchen": "Sent to kitchen unpaid",
+  "day.open": "Business day opened",
+  "day.reopen": "Business day reopened",
+  "day.close": "Business day closed",
+  "shift.open": "Shift opened",
+  "shift.close": "Shift closed",
+  "shift.review": "Shift reviewed",
+  "cash.drop": "Cash drop",
+  "cash.paid_in": "Paid in",
+  "cash.paid_out": "Paid out",
+  "cash.no_sale": "No sale",
 };
 
 export const AUDIT_ENTITIES: { value: string; label: string }[] = [

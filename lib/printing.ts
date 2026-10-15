@@ -20,12 +20,20 @@
  *   faster, and it can kick the drawer.
  */
 import type { OrderSummary } from "./orders";
+import type { SalesReport, ShiftSummary } from "./shifts";
 
 export type PaperWidth = 58 | 80;
 
 export type PrintJob =
   | { kind: "receipt"; order: OrderSummary; copy?: boolean }
-  | { kind: "kitchen"; order: OrderSummary };
+  | { kind: "kitchen"; order: OrderSummary }
+  | { kind: "report"; report: SalesReport }
+  | {
+      kind: "shift_close";
+      shift: ShiftSummary;
+      count: Record<string, number>;
+      branch: { name: string; currency_code: string; timezone: string };
+    };
 
 export interface PrinterDriver {
   readonly id: "browser" | "qz-tray";

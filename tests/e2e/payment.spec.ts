@@ -1,41 +1,19 @@
 import { expect, type Page } from "@playwright/test";
 import { test } from "@playwright/test";
 import {
+  capturePrints,
   enterPin,
   localAdmin,
+  openShifts,
+  prints,
   resetTill,
   SEED,
   setBranchSetting,
   setUpTill,
 } from "./helpers";
 
-type Printed = { kinds: string[]; text: string };
-
-/** Replaces window.print so tests can see what would have printed. */
-async function capturePrints(page: Page) {
-  await page.addInitScript(() => {
-    const w = window as unknown as { __prints: Printed[] };
-    w.__prints = [];
-    window.print = () => {
-      const area = document.querySelector('[data-testid="print-area"]');
-      w.__prints.push({
-        kinds: Array.from(area?.children ?? []).map(
-          (el) => el.getAttribute("data-testid") ?? "",
-        ),
-        text: area?.textContent ?? "",
-      });
-      window.dispatchEvent(new Event("afterprint"));
-    };
-  });
-}
-
-function prints(page: Page) {
-  return page.evaluate(
-    () => (window as unknown as { __prints: Printed[] }).__prints,
-  );
-}
-
 async function openTill(page: Page) {
+  await openShifts();
   await capturePrints(page);
   await setUpTill(page);
   await enterPin(page, SEED.cashier.pin);

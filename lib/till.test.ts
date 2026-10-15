@@ -6,6 +6,8 @@ import {
   pinFailureMessage,
   tillSettings,
 } from "./till";
+import { defaultDenominations } from "./cash";
+import { denominationsFor } from "./settings";
 
 describe("parseStartSession", () => {
   it("parses a successful sign-in", () => {
@@ -157,6 +159,7 @@ describe("tillSettings", () => {
         row("orders.pay_later_dine_in", true, branch),
       ],
       branch,
+      "USD",
     );
     expect(settings).toEqual({
       autoLockMinutes: 2,
@@ -164,26 +167,29 @@ describe("tillSettings", () => {
       autoPrintReceipt: false,
       kitchenTickets: false,
       paperWidth: 58,
+      denominations: [10000, 5000, 2000, 1000, 500, 100, 25, 10, 5, 1],
     });
   });
 
   it("falls back to the global default, then the built-in one", () => {
     expect(
-      tillSettings([row("till.auto_lock_minutes", 10)], branch).autoLockMinutes,
+      tillSettings([row("till.auto_lock_minutes", 10)], branch, "USD")
+        .autoLockMinutes,
     ).toBe(10);
-    expect(tillSettings([], branch)).toEqual({
+    expect(tillSettings([], branch, "USD")).toEqual({
       autoLockMinutes: 5,
       payLaterDineIn: false,
       autoPrintReceipt: false,
       kitchenTickets: false,
       paperWidth: 80,
+      denominations: [10000, 5000, 2000, 1000, 500, 100, 25, 10, 5, 1],
     });
-    expect(tillSettings(null, branch).autoLockMinutes).toBe(5);
+    expect(tillSettings(null, branch, "USD").autoLockMinutes).toBe(5);
   });
 
   it("ignores other branches and bad values", () => {
     expect(
-      tillSettings([row("till.auto_lock_minutes", 1, "other")], branch)
+      tillSettings([row("till.auto_lock_minutes", 1, "other")], branch, "USD")
         .autoLockMinutes,
     ).toBe(5);
     const bad = tillSettings(
@@ -193,11 +199,37 @@ describe("tillSettings", () => {
         row("receipt.paper_width_mm", 70, branch),
       ],
       branch,
+      "USD",
     );
     expect(bad).toMatchObject({
       autoLockMinutes: 5,
       autoPrintReceipt: false,
       paperWidth: 80,
     });
+  });
+});
+
+describe("denominationsFor", () => {
+  const row = (value: unknown, branch_id: string | null = null) => ({
+    key: "cash.denominations",
+    branch_id,
+    value,
+  });
+
+  it("uses the branch's list, then the default list, then the usual notes", () => {
+    const own = row({ currency: "GHS", values: [20000, 100] }, "b1");
+    const shared = row({ currency: "GHS", values: [5000] });
+    expect(denominationsFor([shared, own], "b1", "GHS")).toEqual([20000, 100]);
+    expect(denominationsFor([shared], "b1", "GHS")).toEqual([5000]);
+    expect(denominationsFor([], "b1", "GHS")).toEqual([
+      20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5, 1,
+    ]);
+  });
+
+  it("never uses a list made for another currency", () => {
+    const cedis = row({ currency: "GHS", values: [20000] });
+    expect(denominationsFor([cedis], "b1", "USD")).toEqual(
+      defaultDenominations("USD"),
+    );
   });
 });

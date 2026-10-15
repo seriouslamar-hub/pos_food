@@ -70,35 +70,43 @@ describe("settings", () => {
   const byKey = Object.fromEntries(SETTINGS.map((s) => [s.key, s]));
 
   it("parses each kind of setting", () => {
-    expect(parseSettingInput(byKey["till.auto_lock_minutes"], "10")).toEqual({
+    expect(
+      parseSettingInput(byKey["till.auto_lock_minutes"], "10", "USD"),
+    ).toEqual({
       ok: true,
       value: 10,
     });
-    expect(parseSettingInput(byKey["till.auto_lock_minutes"], "500").ok).toBe(
-      false,
-    );
-    expect(parseSettingInput(byKey["till.auto_lock_minutes"], "2.5").ok).toBe(
-      false,
-    );
     expect(
-      parseSettingInput(byKey["staff.default_cashier_discount_bps"], "12.5"),
+      parseSettingInput(byKey["till.auto_lock_minutes"], "500", "USD").ok,
+    ).toBe(false);
+    expect(
+      parseSettingInput(byKey["till.auto_lock_minutes"], "2.5", "USD").ok,
+    ).toBe(false);
+    expect(
+      parseSettingInput(
+        byKey["staff.default_cashier_discount_bps"],
+        "12.5",
+        "USD",
+      ),
     ).toEqual({
       ok: true,
       value: 1250,
     });
     expect(
-      parseSettingInput(byKey["orders.number_reset_daily"], "false"),
+      parseSettingInput(byKey["orders.number_reset_daily"], "false", "USD"),
     ).toEqual({
       ok: true,
       value: false,
     });
-    expect(parseSettingInput(byKey["receipt.paper_width_mm"], "58")).toEqual({
+    expect(
+      parseSettingInput(byKey["receipt.paper_width_mm"], "58", "USD"),
+    ).toEqual({
       ok: true,
       value: 58,
     });
-    expect(parseSettingInput(byKey["receipt.paper_width_mm"], "70").ok).toBe(
-      false,
-    );
+    expect(
+      parseSettingInput(byKey["receipt.paper_width_mm"], "70", "USD").ok,
+    ).toBe(false);
   });
 
   it("reads stored values defensively", () => {
@@ -106,8 +114,41 @@ describe("settings", () => {
     expect(readSetting(byKey["receipt.paper_width_mm"], 70)).toBeNull();
     expect(readSetting(byKey["orders.number_reset_daily"], "yes")).toBeNull();
     expect(
-      settingToInput(byKey["staff.default_cashier_discount_bps"], 1250),
+      settingToInput(byKey["staff.default_cashier_discount_bps"], 1250, "USD"),
     ).toBe("12.5");
+  });
+
+  it("reads money and notes-and-coins settings in the branch currency", () => {
+    const alert = byKey["cash.variance_alert"];
+    expect(parseSettingInput(alert, "2.50", "GHS")).toEqual({
+      ok: true,
+      value: 250,
+    });
+    expect(parseSettingInput(alert, "-1", "GHS").ok).toBe(false);
+    expect(settingToInput(alert, 500, "USD")).toBe("5.00");
+
+    const notes = byKey["cash.denominations"];
+    expect(parseSettingInput(notes, "0.50, 200 100,  1", "GHS")).toEqual({
+      ok: true,
+      value: { currency: "GHS", values: [20000, 10000, 100, 50] },
+    });
+    expect(parseSettingInput(notes, "200, ten", "GHS")).toEqual({
+      ok: false,
+      error: "“ten” isn't an amount. List amounts like 200, 100, 0.50.",
+    });
+    expect(parseSettingInput(notes, " ", "GHS").ok).toBe(false);
+    expect(
+      settingToInput(notes, { currency: "GHS", values: [20000, 50] }, "GHS"),
+    ).toBe("200, 0.50");
+    // A list saved for another currency shows the usual notes instead.
+    expect(
+      settingToInput(notes, { currency: "GHS", values: [20000] }, "GBP"),
+    ).toBe("50, 20, 10, 5, 2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01");
+    expect(
+      readSetting(notes, { currency: "GHS", values: [100, 20000, 100] }),
+    ).toEqual({ currency: "GHS", values: [20000, 100] });
+    expect(readSetting(notes, { currency: "GHS", values: [0] })).toBeNull();
+    expect(readSetting(notes, [100])).toBeNull();
   });
 
   it("checks that red comes after amber on the kitchen screen", () => {

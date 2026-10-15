@@ -3,6 +3,7 @@ import {
   enterPin,
   localAdmin,
   open,
+  openShifts,
   resetTill,
   SEED,
   setUpTill,
@@ -136,6 +137,7 @@ test.describe("menu", () => {
     }) => {
       // The till is open on the Chicken tab.
       await resetTill();
+      await openShifts();
       await setUpTill(page);
       await enterPin(page, SEED.cashier.pin);
       await page.getByRole("tab", { name: "Chicken" }).click();

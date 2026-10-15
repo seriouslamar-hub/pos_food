@@ -40,3 +40,42 @@ export function applyCash(
   const amount = Math.max(Math.min(tendered, due), 0);
   return { amount, change: Math.max(tendered - amount, 0) };
 }
+
+/** Notes and coins in common use, largest first, in minor units. */
+const DENOMINATIONS: Record<string, number[]> = {
+  GHS: [20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5, 1],
+  USD: [10000, 5000, 2000, 1000, 500, 100, 25, 10, 5, 1],
+  EUR: [20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5, 2, 1],
+  GBP: [5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5, 2, 1],
+  NGN: [100000, 50000, 20000, 10000, 5000, 2000, 1000, 500],
+  KES: [100000, 50000, 20000, 10000, 5000, 2000, 1000, 500, 100],
+  ZAR: [20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10],
+  XOF: [10000, 5000, 2000, 1000, 500, 250, 200, 100, 50, 25, 10, 5],
+};
+
+/** The built-in notes and coins for a currency, largest first. */
+export function defaultDenominations(currencyCode: string): number[] {
+  const known = DENOMINATIONS[currencyCode.toUpperCase()];
+  if (known) return known;
+  const digits = currencyFractionDigits(currencyCode);
+  const unit = 10 ** digits;
+  const notes = [100, 50, 20, 10, 5, 2, 1].map((n) => n * unit);
+  const coins =
+    digits >= 2 ? [50, 20, 10, 5, 1].map((c) => (c * unit) / 100) : [];
+  return [...notes, ...coins];
+}
+
+/** How many of each note and coin: {value in minor units: count}. */
+export type CashCount = Record<number, number>;
+
+export function countTotal(count: CashCount): number {
+  return Object.entries(count).reduce(
+    (sum, [value, n]) => sum + Number(value) * n,
+    0,
+  );
+}
+
+/** What open_shift and close_shift expect: only the non-zero counts. */
+export function toCountPayload(count: CashCount): Record<string, number> {
+  return Object.fromEntries(Object.entries(count).filter(([, n]) => n > 0));
+}

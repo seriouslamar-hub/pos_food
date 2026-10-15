@@ -1,9 +1,17 @@
 import { expect, test } from "@playwright/test";
-import { enterPin, localAdmin, resetTill, SEED, setUpTill } from "./helpers";
+import {
+  enterPin,
+  localAdmin,
+  openShifts,
+  resetTill,
+  SEED,
+  setUpTill,
+} from "./helpers";
 
 test.describe("till order screen", () => {
   test.beforeEach(async ({ page }) => {
     await resetTill();
+    await openShifts();
     await setUpTill(page);
     await enterPin(page, SEED.cashier.pin);
     await expect(page.getByTestId("till-staff-name")).toHaveText(

@@ -30,6 +30,11 @@ type ManagerOverrideProps = {
   /** What the cashier is trying to do, e.g. "Open the drawer without a sale". */
   actionLabel: string;
   requireReason?: boolean;
+  /**
+   * A reason the cashier already gave in the action's own form. It's sent
+   * with the approval (so the audit log has it) instead of asking again.
+   */
+  reason?: string;
   onApproved: (approval: OverrideApproval) => void;
 };
 
@@ -44,6 +49,7 @@ export function ManagerOverride({
   permission,
   actionLabel,
   requireReason = false,
+  reason: givenReason,
   onApproved,
 }: ManagerOverrideProps) {
   const fid = useFieldIds();
@@ -52,7 +58,8 @@ export function ManagerOverride({
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const reasonMissing = requireReason && reason.trim().length === 0;
+  const askReason = requireReason && givenReason === undefined;
+  const reasonMissing = askReason && reason.trim().length === 0;
 
   function changeOpen(next: boolean) {
     if (!next) {
@@ -68,7 +75,7 @@ export function ManagerOverride({
       p_session_id: session.sessionId,
       p_pin: pin,
       p_permission: permission,
-      p_reason: reason.trim() || undefined,
+      p_reason: (givenReason ?? reason).trim() || undefined,
     });
     if (isSessionEndedError(rpcError)) {
       changeOpen(false);
@@ -100,7 +107,7 @@ export function ManagerOverride({
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-4">
-          {requireReason ? (
+          {askReason ? (
             <div className="flex w-full flex-col gap-2">
               <Label htmlFor={fid("override-reason")}>Reason</Label>
               <Input

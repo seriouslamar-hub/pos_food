@@ -7,9 +7,22 @@ export const SEED = {
   tillDeviceId: "30000000-0000-4000-8000-000000000001",
   tillName: "Front counter till",
   admin: { email: "admin@example.com", name: "Ada Admin", pin: "9000" },
-  manager: { email: "manager@example.com", name: "Max Manager", pin: "9999" },
-  cashier: { name: "Ama Cashier", pin: "1111" },
-  cashier2: { name: "Kofi Cashier", pin: "2222" },
+  manager: {
+    id: "20000000-0000-4000-8000-000000000002",
+    email: "manager@example.com",
+    name: "Max Manager",
+    pin: "9999",
+  },
+  cashier: {
+    id: "20000000-0000-4000-8000-000000000003",
+    name: "Ama Cashier",
+    pin: "1111",
+  },
+  cashier2: {
+    id: "20000000-0000-4000-8000-000000000004",
+    name: "Kofi Cashier",
+    pin: "2222",
+  },
   password: "password123",
 } as const;
 
@@ -62,6 +75,118 @@ export async function setBranchSetting(
     .from("settings")
     .insert({ branch_id: SEED.branchId, key, value });
   if (error) throw error;
+}
+
+/**
+ * Opens the seed branch's business day (UTC, like the branch) and an open
+ * shift on the seed till for each staff member, so tests can sell at once.
+ */
+export async function openShifts(
+  staffIds: string[] = [SEED.cashier.id, SEED.manager.id],
+) {
+  const db = localAdmin();
+  const { data: open } = await db
+    .from("business_days")
+    .select("id")
+    .eq("branch_id", SEED.branchId)
+    .eq("status", "open")
+    .maybeSingle();
+  let dayId = open?.id;
+  if (!dayId) {
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: closed } = await db
+      .from("business_days")
+      .select("id")
+      .eq("branch_id", SEED.branchId)
+      .eq("business_date", today)
+      .maybeSingle();
+    if (closed) {
+      await db
+        .from("business_days")
+        .update({
+          status: "open",
+          closed_at: null,
+          closed_by: null,
+          z_report: null,
+        })
+        .eq("id", closed.id);
+      dayId = closed.id;
+    } else {
+      const { data: created, error } = await db
+        .from("business_days")
+        .insert({ branch_id: SEED.branchId, business_date: today })
+        .select("id")
+        .single();
+      if (error) throw error;
+      dayId = created.id;
+    }
+  }
+  for (const staffId of staffIds) {
+    const { data: shift } = await db
+      .from("shifts")
+      .select("id")
+      .eq("staff_id", staffId)
+      .eq("device_id", SEED.tillDeviceId)
+      .eq("status", "open")
+      .maybeSingle();
+    if (shift) continue;
+    const { error } = await db.from("shifts").insert({
+      branch_id: SEED.branchId,
+      business_day_id: dayId,
+      staff_id: staffId,
+      device_id: SEED.tillDeviceId,
+      opening_float: 0,
+    });
+    if (error) throw error;
+  }
+}
+
+/** Closes every open shift and the open day, so a test starts from nothing. */
+export async function closeShiftsAndDay() {
+  const db = localAdmin();
+  const now = new Date().toISOString();
+  await db
+    .from("shifts")
+    .update({
+      status: "approved",
+      closed_at: now,
+      expected_cash: 0,
+      counted_cash: 0,
+      variance: 0,
+    })
+    .eq("branch_id", SEED.branchId)
+    .eq("status", "open");
+  await db
+    .from("business_days")
+    .update({ status: "closed", closed_at: now })
+    .eq("branch_id", SEED.branchId)
+    .eq("status", "open");
+}
+
+export type Printed = { kinds: string[]; text: string };
+
+/** Replaces window.print so tests can see what would have printed. */
+export async function capturePrints(page: Page) {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __prints: Printed[] };
+    w.__prints = [];
+    window.print = () => {
+      const area = document.querySelector('[data-testid="print-area"]');
+      w.__prints.push({
+        kinds: Array.from(area?.children ?? []).map(
+          (el) => el.getAttribute("data-testid") ?? "",
+        ),
+        text: area?.textContent ?? "",
+      });
+      window.dispatchEvent(new Event("afterprint"));
+    };
+  });
+}
+
+export function prints(page: Page) {
+  return page.evaluate(
+    () => (window as unknown as { __prints: Printed[] }).__prints,
+  );
 }
 
 /** Opens a page and waits until React is interactive. */

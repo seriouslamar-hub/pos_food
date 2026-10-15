@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AdminPage, PageHeader, PageSkeleton } from "@/components/admin/page";
 import { requireStaff } from "@/lib/auth";
+import { getMenuCurrency } from "@/lib/menu.server";
 import { readSetting, SETTINGS, type SettingValue } from "@/lib/settings";
 import { createClient } from "@/lib/supabase/server";
 import { SettingsForm } from "./settings-form";
@@ -27,7 +28,7 @@ async function Settings({
   const { branch } = await searchParams;
   const supabase = await createClient();
   const [{ data: branches }, { data: rows }] = await Promise.all([
-    supabase.from("branches").select("id, name").order("name"),
+    supabase.from("branches").select("id, name, currency_code").order("name"),
     supabase
       .from("settings")
       .select("branch_id, key, value")
@@ -40,6 +41,12 @@ async function Settings({
     typeof branch === "string" && branches?.some((b) => b.id === branch)
       ? branch
       : null;
+
+  // Money settings are typed in the branch's currency (the main currency for
+  // the defaults).
+  const currency = branchId
+    ? (branches?.find((b) => b.id === branchId)?.currency_code ?? "USD")
+    : await getMenuCurrency(supabase);
 
   const defaults: Record<string, SettingValue> = {};
   const overrides: Record<string, SettingValue> = {};
@@ -63,6 +70,7 @@ async function Settings({
         key={branchId ?? "defaults"}
         branchId={branchId}
         branches={branches ?? []}
+        currency={currency}
         defaults={defaults}
         overrides={overrides}
       />

@@ -3,6 +3,7 @@ import {
   enterPin,
   localAdmin,
   open,
+  openShifts,
   resetTill,
   SEED,
   setUpTill,
@@ -166,12 +167,22 @@ test.describe("admin back office", () => {
       const tillContext = await browser.newContext();
       const till = await tillContext.newPage();
       await resetTill();
+      await openShifts();
       await setUpTill(till);
       await enterPin(till, SEED.cashier.pin);
-      await till.getByRole("button", { name: "No sale (open drawer)" }).click();
-      await expect(till.getByRole("dialog")).toBeHidden();
+      await till.getByRole("button", { name: "Cash", exact: true }).click();
+      await till
+        .getByRole("dialog", { name: "Cash" })
+        .getByRole("button", { name: "No sale" })
+        .click();
+      const noSale = till.getByRole("dialog", { name: "No sale" });
+      await noSale.getByLabel("Reason").fill("Change for a note");
+      await noSale.getByRole("button", { name: "Record no sale" }).click();
+      await expect(
+        till.getByRole("dialog", { name: "Manager approval" }),
+      ).toHaveCount(0);
       await expect(till.getByTestId("till-action-result")).toHaveText(
-        /^Allowed\./,
+        /^No sale recorded\. The drawer is open\./,
       );
       await tillContext.close();
 
