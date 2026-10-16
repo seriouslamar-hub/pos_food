@@ -4,6 +4,7 @@ import {
   BackOfficeHome,
   BackOfficeSkeleton,
 } from "@/components/back-office-home";
+import { Readiness } from "@/components/admin/readiness";
 import { requireStaff } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Admin" };
@@ -22,6 +23,7 @@ async function AdminHome() {
     <BackOfficeHome
       heading={`Welcome, ${staff.fullName}`}
       intro="Head office: every branch, the menu, staff and system settings."
+      alert={<Readiness />}
       sections={[
         {
           title: "Branches",
