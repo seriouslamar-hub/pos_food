@@ -27,9 +27,9 @@
   - **Spending points:** type how many (or **All**) and tap **Use this customer**.
   - **Earning:** points are added when the order is paid.
 
-## Kiosk and online orders
+## Kiosk orders
 
-Orders from the self-order kiosk, and online orders the customer chose to pay at the counter, wait under **Unpaid orders** (marked Kiosk or Online). Each one says how the customer chose to pay ("will pay by mobile money"). When they come to pay, tap **Take** on their order; the payment screen opens on their chosen method, and you take it as usual. It then goes to the kitchen. The kitchen ticket shows "Online" and the pickup time.
+Orders from the self-order kiosk wait under **Unpaid orders** (marked Kiosk). Each one says how the customer chose to pay ("will pay by mobile money"). When they come to pay, tap **Take** on their order; the payment screen opens on their chosen method, and you take it as usual. It then goes to the kitchen.
 
 ## Taking payment
 

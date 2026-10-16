@@ -14,17 +14,15 @@ type Placed = { id: string; order_number: string; total: number };
 
 /**
  * The self-order kiosk: a welcome screen, the menu with photos, meal
- * offers, and checkout (pay at the counter, or by card when set up). It
+ * offers, and checkout (the customer says how they'll pay at the counter). It
  * starts over after `idleSeconds` without a tap.
  */
 export function KioskApp({
   branchId,
   idleSeconds,
-  cardPayments,
 }: {
   branchId: string;
   idleSeconds: number;
-  cardPayments: boolean;
 }) {
   const [supabase] = useState(createClient);
   const [menu, setMenu] = useState<MenuDoc | null>(null);
@@ -77,7 +75,7 @@ export function KioskApp({
     };
   }, [screen, idleSeconds]);
 
-  async function place(payByCard: boolean) {
+  async function place() {
     setBusy(true);
     setError(null);
     const { data, error: e } = await supabase.rpc("submit_kiosk_order", {
@@ -107,24 +105,6 @@ export function KioskApp({
     }
     const order = data as unknown as Placed;
     setPlaced(order);
-    if (payByCard) {
-      const res = await fetch("/api/payments/online/start", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ orderId: order.id }),
-      });
-      const body = (await res.json().catch(() => ({}))) as {
-        url?: string;
-        error?: string;
-      };
-      if (res.ok && body.url) {
-        window.location.assign(body.url);
-        return;
-      }
-      setError(
-        `${body.error ?? "Card payment isn't available."} Pay at the counter instead.`,
-      );
-    }
     setBusy(false);
     setScreen("done");
   }
@@ -239,7 +219,7 @@ export function KioskApp({
                   totals.problems.length > 0 ||
                   !payBy
                 }
-                onClick={() => void place(false)}
+                onClick={() => void place()}
               >
                 {busy
                   ? "Sending…"
@@ -247,20 +227,6 @@ export function KioskApp({
                     ? "Send my order"
                     : "Choose how you'll pay"}
               </Button>
-              {cardPayments ? (
-                <Button
-                  variant="secondary"
-                  className="h-20 text-2xl"
-                  disabled={
-                    busy ||
-                    cart.lines.length === 0 ||
-                    totals.problems.length > 0
-                  }
-                  onClick={() => void place(true)}
-                >
-                  Pay by card here
-                </Button>
-              ) : null}
             </div>
           )}
         />

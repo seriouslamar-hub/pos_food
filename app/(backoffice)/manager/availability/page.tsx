@@ -8,9 +8,7 @@ import {
   PageSkeleton,
 } from "@/components/admin/page";
 import { AvailabilityBoard } from "@/components/menu/availability-board";
-import { OnlineOrderingToggle } from "@/components/order/online-toggle";
 import { requireStaff } from "@/lib/auth";
-import { effectiveSetting } from "@/lib/settings";
 import { parseMenu } from "@/lib/menu";
 import { createClient } from "@/lib/supabase/server";
 
@@ -29,19 +27,9 @@ async function Availability() {
   if (staff.role === "admin" || !staff.branchId)
     redirect("/admin/availability");
   const supabase = await createClient();
-  const [{ data, error }, { data: online }] = await Promise.all([
-    supabase.rpc("get_menu", { p_branch_id: staff.branchId }),
-    supabase
-      .from("settings")
-      .select("key, branch_id, value")
-      .in("key", ["online.enabled", "online.paused"]),
-  ]);
-  const onlineEnabled =
-    effectiveSetting("online.enabled", online, staff.branchId) === true;
-  const onlinePaused =
-    (online ?? []).find(
-      (r) => r.key === "online.paused" && r.branch_id === staff.branchId,
-    )?.value === true;
+  const { data, error } = await supabase.rpc("get_menu", {
+    p_branch_id: staff.branchId,
+  });
 
   return (
     <AdminPage>
@@ -49,9 +37,6 @@ async function Availability() {
         title="Availability"
         description="Mark items and extras out of stock. Every till in your branch updates within seconds."
       />
-      {onlineEnabled ? (
-        <OnlineOrderingToggle branchId={staff.branchId} paused={onlinePaused} />
-      ) : null}
       {error || !data ? (
         <EmptyState>
           The menu couldn&apos;t be loaded. Refresh to try again.

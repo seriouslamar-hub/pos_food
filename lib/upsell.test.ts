@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { indexMenu, type MenuDoc, type MenuItem } from "./menu";
-import { mealOffer, pickupSlots } from "./upsell";
+import { mealOffer } from "./upsell";
 
 function item(p: Partial<MenuItem> & { id: string }): MenuItem {
   return {
@@ -97,16 +97,5 @@ describe("mealOffer", () => {
         indexMenu(soldOut),
       ),
     ).toBeNull();
-  });
-});
-
-describe("pickupSlots", () => {
-  it("starts at the next quarter hour after the kitchen's time", () => {
-    const slots = pickupSlots(new Date("2026-10-16T12:03:00Z"), 20, 3);
-    expect(slots.map((d) => d.toISOString())).toEqual([
-      "2026-10-16T12:30:00.000Z",
-      "2026-10-16T12:45:00.000Z",
-      "2026-10-16T13:00:00.000Z",
-    ]);
   });
 });

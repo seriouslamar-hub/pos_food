@@ -155,28 +155,6 @@ export const SETTINGS: SettingDefinition[] = [
     fallback: true,
   },
   {
-    key: "online.enabled",
-    label: "Online ordering",
-    help: "Customers order and pay from the branch's page at /order. Managers can pause it at busy times.",
-    kind: "boolean",
-    fallback: false,
-  },
-  {
-    key: "online.prep_minutes",
-    label: "Earliest online pickup (minutes from ordering)",
-    kind: "integer",
-    min: 0,
-    max: 180,
-    fallback: 20,
-  },
-  {
-    key: "online.pay_at_counter",
-    label: "Online orders can be paid at the counter",
-    help: "Otherwise they must be paid online (needs a payment provider). Unpaid orders never reach the kitchen.",
-    kind: "boolean",
-    fallback: false,
-  },
-  {
     key: "kiosk.idle_seconds",
     label: "Kiosk starts over after (seconds without a tap)",
     kind: "integer",

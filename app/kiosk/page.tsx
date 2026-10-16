@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { KioskApp } from "@/components/kiosk/kiosk-app";
 import { getSignedInUser } from "@/lib/auth";
-import { onlineProvider } from "@/lib/payments/online";
 import { deviceHome } from "@/lib/routes";
 import { effectiveSetting } from "@/lib/settings";
 import { createClient } from "@/lib/supabase/server";
@@ -40,7 +39,6 @@ async function Kiosk() {
       idleSeconds={Number(
         effectiveSetting("kiosk.idle_seconds", rows, branchId),
       )}
-      cardPayments={onlineProvider() !== null}
     />
   );
 }

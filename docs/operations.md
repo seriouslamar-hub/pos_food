@@ -36,16 +36,7 @@
 
 **Restore test, 16 Oct 2026:** production dump restored into a freshly migrated local database in under a second. Logins (with password hashes), staff, branches, settings, permissions and all 73 audit entries matched production exactly.
 
-## Online ordering setup
-
-Payments are taken at the counter: customers choose cash, card or mobile money when they order, and the cashier takes it from **Unpaid orders** on the till. No payment gateway is needed.
-
-1. **Phone codes (Arkesel):** the Vercel variables `ARKESEL_API_KEY` (sensitive) and `ARKESEL_SENDER_ID` (your **approved** sender ID). Supabase's Send SMS hook already points at `https://pos-food-system.vercel.app/api/auth/sms-hook` with the secret in `SMS_HOOK_SECRET`. Keep SMS credit topped up in Arkesel; each code is one SMS.
-2. **Switch it on:** Admin → Settings → **Online ordering** on, and set the earliest pickup time.
-3. **Test it:** order from `/order` on your phone, pay at the till, and check it reaches the kitchen screen.
-4. **Optional online payments:** the Paystack integration is built in but off. To use it, set `PAYMENTS_PROVIDER=paystack` and `PAYSTACK_SECRET_KEY` in Vercel and the webhook URL in Paystack.
-
-Auth settings set on 16 Oct 2026: self sign-up **off**, site URL `https://pos-food-system.vercel.app`, minimum password length 8.
+**Auth settings (16 Oct 2026):** self sign-up **off**, phone sign-in off, site URL `https://pos-food-system.vercel.app`, minimum password length 8. The POS sells in the restaurant only (no online ordering).
 
 ## Security checklist
 

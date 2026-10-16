@@ -196,21 +196,15 @@ The till prints through the browser (`lib/printing.ts`): receipts after a sale w
 2. Start Chrome with `--kiosk-printing` so it prints straight away without the print dialog.
 3. Cash drawers plug into the receipt printer. A web page can't send the "open drawer" command, so turn on the printer driver's option to open the drawer when printing. A QZ Tray driver (raw ESC/POS, can open the drawer itself) is stubbed in `lib/printing.ts` for later.
 
-## Kiosk and online ordering (Phase 15)
+## Self-order kiosk (Phase 15)
 
-- **Kiosk** (`/kiosk`, a device of type Kiosk, best on a portrait touch screen):
-  - big photos, meal builder, "Make it a meal?" offers, larger text, and it starts over after `kiosk.idle_seconds` without a tap
-  - customers pay at the counter: the order waits in the till's **Unpaid orders** (marked Kiosk) and goes to the kitchen when paid
-  - or they pay by card when online payment is set up
-- **Online ordering** (`/order`, public; switch on with `online.enabled`):
-  - customers choose a branch, build their order (the public menu shows only what's on sale), pick a pickup time (from `online.prep_minutes`) and verify their mobile number with a texted code
-  - they choose how they'll pay and pay when they collect (`online.pay_at_counter`, on by default)
-  - `/order/track/<id>` follows the order until it's collected
-  - managers can **pause** online orders from **Availability**
-- **Unpaid orders never reach the kitchen.** Kiosk and online orders go there only once they're paid at the till (or, if the optional gateway is on, once its signed webhook confirms the exact amount).
-- **Payments are taken at the counter, like any till sale.** No payment gateway is needed. At the kiosk or online, the customer chooses how they'll pay (cash, card or mobile money, from the branch's payment methods). The order waits under the till's **Unpaid orders** marked with that choice, and the payment screen opens on it. Once paid, the order goes to the kitchen, and online payments count in the Z report like any other.
-  - **Optional, off:** paying online with a gateway is built in but switched off. Turn it on with `PAYMENTS_PROVIDER=paystack` and `PAYSTACK_SECRET_KEY`, and set the Paystack webhook to `https://<app>/api/payments/webhook/paystack`.
-- **Phone codes:** sent through **Arkesel**. Supabase's Send SMS hook calls `/api/auth/sms-hook` (signed with `SMS_HOOK_SECRET`), which texts the code using `ARKESEL_API_KEY` and `ARKESEL_SENDER_ID`. Sign-ups stay off: the app's server creates a customer's phone login just before texting the code (`/api/online/phone`, rate limited). Locally, `+233240000001` and `+233240000002` sign in with `123456`.
+The POS sells in the restaurant only; there's no online ordering.
+
+- **Kiosk** (`/kiosk`, a device of type Kiosk, best on a portrait touch screen in the restaurant):
+  - photo menu, meal builder, "Make it a meal?" offers and larger text; it starts over after `kiosk.idle_seconds` without a tap
+  - the customer chooses how they'll pay (cash, card or mobile money) and sends the order
+- **At the counter:** the order waits under the till's **Unpaid orders** (marked Kiosk, with the customer's choice). The payment screen opens on that method, and the order goes to the kitchen once it's paid.
+- **Pricing:** kiosk orders are priced by the same rules as the till (`submit_channel_order_core`); prices or discounts sent by the screen are ignored.
 
 ## Launch readiness (Phase 14)
 

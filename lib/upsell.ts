@@ -52,15 +52,3 @@ export function mealOffer(
   }
   return best;
 }
-
-/** Pickup times to offer: every 15 minutes from when the kitchen can be ready. */
-export function pickupSlots(
-  now: Date,
-  prepMinutes: number,
-  count = 12,
-): Date[] {
-  const earliest = now.getTime() + prepMinutes * 60_000;
-  const step = 15 * 60_000;
-  const first = Math.ceil(earliest / step) * step;
-  return Array.from({ length: count }, (_, i) => new Date(first + i * step));
-}

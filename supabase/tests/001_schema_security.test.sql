@@ -37,8 +37,7 @@ select is(
   'anon has no privileges on any table or view in public'
 );
 
--- anon can execute only the read-only public ordering pages' functions
--- (Phase 15): the branches taking online orders and their menus.
+-- anon can't execute any function in public.
 select is(
   array(
     select p.oid::regprocedure::text
@@ -48,8 +47,8 @@ select is(
       and has_function_privilege('anon', p.oid, 'execute')
     order by 1
   ),
-  array['get_public_menu(uuid)', 'list_online_branches()']::text[],
-  'anon can execute only the public menu functions'
+  array[]::text[],
+  'anon cannot execute any function in public'
 );
 
 -- Signed-in users can execute only the API functions listed here. Internal
@@ -80,15 +79,12 @@ select is(
     'get_day_report',
     'get_menu',
     'get_offline_bundle',
-    'get_online_order',
     'get_order',
-    'get_public_menu',
     'has_permission',
     'inventory_report',
     'is_admin',
     'is_device',
     'is_manager',
-    'list_online_branches',
     'list_open_shifts',
     'load_sample_inventory',
     'load_sample_menu',
@@ -96,7 +92,6 @@ select is(
     'open_business_day',
     'open_shift',
     'order_audit_trail',
-    'place_online_order',
     'recall_items',
     'receive_purchase_order',
     'record_cash_movement',
@@ -121,7 +116,6 @@ select is(
     'set_availability',
     'set_branch_price',
     'set_device_training',
-    'set_online_ordering',
     'set_purchase_order_status',
     'set_staff_login',
     'set_staff_pin',
