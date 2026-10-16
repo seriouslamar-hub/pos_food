@@ -20,13 +20,13 @@
 
 ## Backups
 
-- **Nightly backups (all plans):** `.github/workflows/backup.yml` runs at 02:30 UTC every night. It dumps the production database (roles, schema and all data, including logins), encrypts it with the `BACKUP_PASSPHRASE` secret (AES-256, gpg) and keeps it for 30 days under **Actions → Nightly database backup → Artifacts**. The repository is public, so backups are only stored encrypted. Keep the passphrase somewhere safe outside GitHub (a password manager): without it the backups can't be opened. You can also run it on demand from the Actions tab.
+- **Nightly backups (all plans):** `.github/workflows/backup.yml` runs at 02:30 UTC every night. It dumps the production database (roles, schema and all data, including logins), encrypts it with the `BACKUP_PASSPHRASE` secret (openssl AES-256 with PBKDF2; macOS and Linux have openssl built in) and keeps it for 30 days under **Actions → Nightly database backup → Artifacts**. The repository is public, so backups are only stored encrypted. Keep the passphrase somewhere safe outside GitHub (a password manager): without it the backups can't be opened. You can also run it on demand from the Actions tab.
 - **Supabase's own backups:** on the Pro plan Supabase also keeps daily backups for 7 days (point-in-time recovery is an add-on). As of 16 Oct 2026 the project showed none, which is the free plan.
 
 ### Test a restore (before go-live, then every quarter)
 
-1. Download the latest backup artifact from the Actions tab and unzip it, which gives `pos-backup-YYYYMMDD-HHMM.tar.gz.gpg`.
-2. With the local stack running (`supabase start`, then `supabase db reset --no-seed`), run `scripts/restore-backup.sh pos-backup-....tar.gz.gpg` and enter the passphrase. It prints how many logins, orders and audit entries came back. Compare them with production.
+1. Download the latest backup artifact from the Actions tab and unzip it, which gives `pos-backup-YYYYMMDD-HHMM.tar.gz.enc`.
+2. With the local stack running (`supabase start`, then `supabase db reset --no-seed`), run `scripts/restore-backup.sh pos-backup-....tar.gz.enc` and enter the passphrase. It prints how many logins, orders and audit entries came back. Compare them with production.
 3. **Restoring for real** (production is lost):
    1. Create a new Supabase project.
    2. Apply the migrations: `supabase link --project-ref <new>` then `supabase db push`.

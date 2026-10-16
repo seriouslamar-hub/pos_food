@@ -4,18 +4,23 @@
 # database URL you give (a new, empty Supabase project with this repo's
 # migrations applied).
 #
-#   scripts/restore-backup.sh pos-backup-20261016-0230.tar.gz.gpg            # local test
-#   scripts/restore-backup.sh pos-backup-....tar.gz.gpg "postgresql://..."   # another project
+#   scripts/restore-backup.sh pos-backup-20261016-0230.tar.gz.enc            # local test
+#   scripts/restore-backup.sh pos-backup-....tar.gz.enc "postgresql://..."   # another project
 #
-# Asks for the backup passphrase. Never point it at the live database: it
+# Asks for the backup passphrase (or reads BACKUP_PASSPHRASE). Never point it at the live database: it
 # empties the tables before loading the backup.
 set -euo pipefail
-file="${1:?Usage: scripts/restore-backup.sh <backup.tar.gz.gpg> [database-url]}"
+file="${1:?Usage: scripts/restore-backup.sh <backup.tar.gz.enc> [database-url]}"
 target="${2:-}"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
-gpg --decrypt -o "$work/backup.tar.gz" "$file"
+if [ -z "${BACKUP_PASSPHRASE:-}" ]; then
+  read -r -s -p "Backup passphrase: " BACKUP_PASSPHRASE
+  echo
+fi
+BACKUP_PASSPHRASE="$BACKUP_PASSPHRASE" openssl enc -d -aes-256-cbc -md sha256 -pbkdf2 -iter 200000 \
+  -pass env:BACKUP_PASSPHRASE -in "$file" -out "$work/backup.tar.gz"
 tar -xzf "$work/backup.tar.gz" -C "$work"
 
 # Supabase-managed storage tables aren't restored (they hold no app data).

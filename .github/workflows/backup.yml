@@ -1,7 +1,7 @@
 name: Nightly database backup
 
 # Every night: dump the production database (roles, schema, data),
-# encrypt it with BACKUP_PASSPHRASE and keep it as a workflow artifact for
+# encrypt it with BACKUP_PASSPHRASE (openssl AES-256, PBKDF2) and keep it as a workflow artifact for
 # 30 days. The repository is public, so backups are only ever stored
 # encrypted. Restore with scripts/restore-backup.sh (see docs/operations.md).
 on:
@@ -37,10 +37,10 @@ jobs:
           set -euo pipefail
           name="pos-backup-$(date -u +%Y%m%d-%H%M)"
           tar -czf "$name.tar.gz" -C dump .
-          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" \
-            --symmetric --cipher-algo AES256 -o "$name.tar.gz.gpg" "$name.tar.gz"
+          openssl enc -aes-256-cbc -md sha256 -pbkdf2 -iter 200000 -salt \
+            -pass env:BACKUP_PASSPHRASE -in "$name.tar.gz" -out "$name.tar.gz.enc"
           rm -rf dump "$name.tar.gz"
-          echo "BACKUP_FILE=$name.tar.gz.gpg" >> "$GITHUB_ENV"
+          echo "BACKUP_FILE=$name.tar.gz.enc" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.BACKUP_FILE }}
