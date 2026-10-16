@@ -40,6 +40,8 @@ export type ShiftSummary = {
 export type ShiftCash = {
   opening_float: number;
   cash_sales: number;
+  /** Refunds paid out in cash from this drawer. */
+  cash_refunds: number;
   paid_in: number;
   paid_out: number;
   drops: number;
@@ -74,7 +76,7 @@ export type SalesReport = {
   items_sold: number;
   items: { name: string; quantity: number; amount: number }[];
   voids: { count: number; amount: number };
-  refunds: { count: number; amount: number };
+  refunds: { count: number; amount: number; cash?: number };
   unpaid_orders: { count: number; amount: number };
   /** X report: the shift. The cashier's copy has no expected or counted cash. */
   shift?: ShiftSummary;

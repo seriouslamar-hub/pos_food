@@ -29,3 +29,29 @@ export function formatInZone(
   }
   return formatter.format(new Date(iso));
 }
+
+/** The date (YYYY-MM-DD) at `now` in a timezone. Falls back to UTC. */
+export function dateInZone(now: number, timeZone: string): string {
+  try {
+    return new Intl.DateTimeFormat("en-CA", { timeZone }).format(now);
+  } catch {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "UTC" }).format(now);
+  }
+}
+
+/** A YYYY-MM-DD date moved by whole days. */
+export function addDays(date: string, days: number): string {
+  const d = new Date(`${date}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Whether a string is a real YYYY-MM-DD date. */
+export function isIsoDate(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    !Number.isNaN(new Date(`${value}T12:00:00Z`).getTime()) &&
+    new Date(`${value}T12:00:00Z`).toISOString().startsWith(value)
+  );
+}

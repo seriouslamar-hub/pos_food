@@ -10,7 +10,7 @@ import {
 } from "@/lib/printing";
 import { CashReport, ShiftCloseSlip } from "./cash-report";
 import { KitchenTicket } from "./kitchen-ticket";
-import { Receipt } from "./receipt";
+import { Receipt, RefundSlip } from "./receipt";
 
 function PrintedJob({
   job,
@@ -26,6 +26,14 @@ function PrintedJob({
       );
     case "kitchen":
       return <KitchenTicket order={job.order} paperWidth={paperWidth} />;
+    case "refund":
+      return (
+        <RefundSlip
+          order={job.order}
+          refundId={job.refundId}
+          paperWidth={paperWidth}
+        />
+      );
     case "report":
       return <CashReport report={job.report} paperWidth={paperWidth} />;
     case "shift_close":

@@ -238,3 +238,16 @@ describe("formatInZone", () => {
     expect(formatInZone(iso, "Not/AZone")).toBe("16 Oct 2026, 23:30");
   });
 });
+
+describe("business dates", () => {
+  it("knows today's date in a timezone", async () => {
+    const { dateInZone, addDays, isIsoDate } = await import("./datetime");
+    const now = Date.parse("2026-10-16T23:30:00Z");
+    expect(dateInZone(now, "UTC")).toBe("2026-10-16");
+    expect(dateInZone(now, "Asia/Tokyo")).toBe("2026-10-17");
+    expect(addDays("2026-03-01", -1)).toBe("2026-02-28");
+    expect(isIsoDate("2026-02-30")).toBe(false);
+    expect(isIsoDate("2026-10-16")).toBe(true);
+    expect(isIsoDate("16/10/2026")).toBe(false);
+  });
+});

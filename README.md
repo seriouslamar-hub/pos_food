@@ -145,6 +145,12 @@ Add these secrets in GitHub → your repo → Settings → Secrets and variables
 - **Cash** on the till: cash drops, paid in and paid out (a manager approves these), no-sale (approval for cashiers), the **X report** for the shift so far, and **Close my shift**.
 - **Blind count:** closing a shift means counting the drawer without being told what it should hold. Expected cash = float + cash sales (after change) + paid in − paid out − drops. The difference waits for a manager to approve or flag it on the **Business day** page, where differences above `cash.variance_alert` are highlighted. A manager can count and close a shift someone forgot, from the till's **End of day**.
 
+### Discounts, price changes, voids and refunds
+
+- **Discounts:** the **⋯** button on a cart line gives that line a discount (percent or amount, with a reason) or a different price; **Discount** in the cart discounts the whole order, shared across the lines. The server works out every discount and the tax on what's left. All discounts together are compared with the cashier's discount limit; above it, or to change a price without `price.override`, a manager approves with their PIN when the cashier charges (the order is then saved before payment, so the approval can't run out).
+- **Orders** on the till finds an order by number, amount or payment reference. From there: reprint the receipt, **refund** a paid order (all of it or some items, back by cash or another method; needs `order.refund` or a manager's PIN), or **void items** on an unpaid one (your own unsent items freely; anything the kitchen has, or someone else's order, needs `order.void_sent` or a manager's PIN). Refunded items the kitchen hasn't made are stopped too. A cash refund comes out of the refunding till's expected cash.
+- **Back office:** **Orders** shows any order with its history (who took, discounted, voided, refunded or approved what), and **Exceptions** lists voids, refunds, discounts, price changes and no-sales by day and cashier, with totals.
+
 ### Receipts, kitchen tickets and the cash drawer
 
 The till prints through the browser (`lib/printing.ts`): receipts after a sale when `receipt.auto_print` is on (or with **Print receipt**), **Reprint last receipt** (marked COPY), and kitchen tickets when `print.kitchen_tickets` is on, for kitchens without a screen. To set up a till's printer:

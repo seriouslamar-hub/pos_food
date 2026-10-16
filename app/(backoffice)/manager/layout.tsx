@@ -3,6 +3,8 @@ import { BackOfficeNav, type NavItem } from "@/components/admin/nav";
 const MANAGER_NAV: NavItem[] = [
   { href: "/manager", label: "Overview", exact: true },
   { href: "/manager/day", label: "Business day" },
+  { href: "/manager/orders", label: "Orders" },
+  { href: "/manager/exceptions", label: "Exceptions" },
   { href: "/manager/availability", label: "Availability" },
   { href: "/manager/staff", label: "Cashiers" },
   { href: "/manager/audit", label: "Audit log" },

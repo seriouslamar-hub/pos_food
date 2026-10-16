@@ -11,10 +11,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { ManagerOverride } from "@/components/manager-override";
 import {
   addLine,
   changeQuantity,
   emptyCart,
+  hasAdjustments,
   removeLine,
   replaceLine,
   toSubmitPayload,
@@ -31,7 +33,8 @@ import {
   toRecordPayments,
   type PendingPayment,
 } from "@/lib/payments/tender";
-import { priceCart } from "@/lib/pricing";
+import { can, type Permission } from "@/lib/permissions";
+import { overDiscountLimit, priceCart, unitPrice } from "@/lib/pricing";
 import { getPrinterDriver, type PrintJob } from "@/lib/printing";
 import type { Json } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/client";
@@ -46,6 +49,8 @@ import { useTillSession } from "@/lib/till-session";
 import { useLiveMenu } from "@/lib/use-live-menu";
 import { CartPanel } from "./cart-panel";
 import { CashActions } from "./cash-actions";
+import { LineOptionsDialog, OrderDiscountDialog } from "./discount-dialogs";
+import { OrderLookup } from "./order-lookup";
 import { ItemSheet } from "./item-sheet";
 import { MenuGrid } from "./menu-grid";
 import { PaymentScreen } from "./payment-screen";
@@ -113,6 +118,16 @@ export function OrderScreen({
   const [completed, setCompleted] = useState<OrderSummary | null>(null);
   const [lastReceipt, setLastReceipt] = useState<OrderSummary | null>(() =>
     loadLastReceipt(deviceId),
+  );
+  const [lineOptions, setLineOptions] = useState<CartLine | null>(null);
+  const [orderDiscountOpen, setOrderDiscountOpen] = useState(false);
+  // A manager's approval being asked for, and who's waiting for it.
+  const [approval, setApproval] = useState<{
+    permission: Permission;
+    actionLabel: string;
+  } | null>(null);
+  const approvalWaiter = useRef<((overrideId: string | null) => void) | null>(
+    null,
   );
 
   const totals = useMemo(
@@ -185,6 +200,7 @@ export function OrderScreen({
   /** Saves the cart as an order. Safe to repeat: the order keeps the cart's id. */
   async function saveCart(
     c: Cart,
+    approvals: { discountOverrideId?: string; priceOverrideId?: string } = {},
   ): Promise<{ order: OrderSummary } | { error: RpcError }> {
     const { data, error: rpcError } = await supabase.rpc("submit_order", {
       p_session_id: session.sessionId,
@@ -192,9 +208,21 @@ export function OrderScreen({
         c,
         newId,
         new Date().toISOString(),
+        approvals,
       ) as unknown as Json,
     });
     return rpcError ? { error: rpcError } : { order: parseOrderSummary(data) };
+  }
+
+  /** Asks for a manager's PIN; resolves with the approval, or null if closed. */
+  function askApproval(
+    permission: Permission,
+    actionLabel: string,
+  ): Promise<string | null> {
+    return new Promise((resolve) => {
+      approvalWaiter.current = resolve;
+      setApproval({ permission, actionLabel });
+    });
   }
 
   /** A saved order, null if there's no such order, "unknown" if offline. */
@@ -240,6 +268,10 @@ export function OrderScreen({
     setError(null);
     setNotice(null);
     setCheckoutError(null);
+    if (hasAdjustments(cart)) {
+      void chargeAdjusted();
+      return;
+    }
     setCheckout({
       cart,
       order: null,
@@ -249,6 +281,61 @@ export function OrderScreen({
       unsure: false,
       paymentTried: false,
     });
+  }
+
+  /**
+   * Discounts and price changes are approved (when needed) and saved before
+   * payment, so an approval can't run out while the customer pays.
+   */
+  async function chargeAdjusted() {
+    if (!totals || working.current) return;
+    const current = cart;
+    const approvals: { discountOverrideId?: string; priceOverrideId?: string } =
+      {};
+    if (
+      current.lines.some((l) => l.price) &&
+      !can(session.permissions, "price.override")
+    ) {
+      const id = await askApproval("price.override", "Changing a price");
+      if (!id) return;
+      approvals.priceOverrideId = id;
+    }
+    if (
+      overDiscountLimit(totals, session.staff.discountLimitBps) &&
+      !can(session.permissions, "discount.override")
+    ) {
+      const id = await askApproval(
+        "discount.override",
+        "A discount above your limit",
+      );
+      if (!id) return;
+      approvals.discountOverrideId = id;
+    }
+
+    working.current = true;
+    setBusy(true);
+    try {
+      const saved = await saveCart(current, approvals);
+      if ("error" in saved) {
+        if (sessionEnded(saved.error)) return;
+        setError(rpcErrorMessage(saved.error));
+        return;
+      }
+      clearSavedCart(saved.order.id);
+      if (saved.order.paid_at) return finishSale(saved.order, false);
+      setCheckout({
+        cart: null,
+        order: saved.order,
+        total: saved.order.total,
+        notice: null,
+        fromCart: true,
+        unsure: false,
+        paymentTried: false,
+      });
+    } finally {
+      working.current = false;
+      setBusy(false);
+    }
   }
 
   async function completeCheckout(payments: PendingPayment[]) {
@@ -456,6 +543,15 @@ export function OrderScreen({
     <div className="flex min-h-0 flex-1">
       <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 p-3">
         <div className="flex flex-wrap items-center justify-end gap-2">
+          <OrderLookup
+            branchId={branchId}
+            currency={menu.currency_code}
+            timezone={menu.timezone}
+            businessDate={shift.business_date}
+            paymentMethods={menu.payment_methods}
+            paperWidth={settings.paperWidth}
+            onTakePayment={payUnpaid}
+          />
           <UnpaidOrders
             branchId={branchId}
             currency={menu.currency_code}
@@ -527,6 +623,56 @@ export function OrderScreen({
         onSendToKitchen={
           settings.payLaterDineIn ? () => void sendToKitchen() : undefined
         }
+        onLineOptions={setLineOptions}
+        onOrderDiscount={() => setOrderDiscountOpen(true)}
+      />
+
+      {lineOptions && index.items.get(lineOptions.menuItemId) ? (
+        <LineOptionsDialog
+          line={lineOptions}
+          item={index.items.get(lineOptions.menuItemId)!}
+          menuUnitPrice={unitPrice(lineOptions, index) ?? 0}
+          currency={menu.currency_code}
+          canDiscount={can(session.permissions, "discount.apply")}
+          onClose={() => setLineOptions(null)}
+          onChange={(patch) => {
+            setCart((c) => replaceLine(c, { ...lineOptions, ...patch }));
+            setLineOptions(null);
+          }}
+        />
+      ) : null}
+      {orderDiscountOpen ? (
+        <OrderDiscountDialog
+          discount={cart.discount}
+          currency={menu.currency_code}
+          max={totals.subtotal - (totals.discountTotal - totals.orderDiscount)}
+          onClose={() => setOrderDiscountOpen(false)}
+          onChange={(discount) => {
+            setCart((c) => ({ ...c, discount }));
+            setOrderDiscountOpen(false);
+          }}
+        />
+      ) : null}
+      <ManagerOverride
+        open={approval !== null}
+        onOpenChange={(open) => {
+          if (open) return;
+          setApproval(null);
+          // Closing without approving. (An approval closes the dialog first,
+          // then calls onApproved, so wait a moment before giving up.)
+          queueMicrotask(() => {
+            approvalWaiter.current?.(null);
+            approvalWaiter.current = null;
+          });
+        }}
+        permission={approval?.permission ?? "discount.override"}
+        actionLabel={approval?.actionLabel ?? ""}
+        onApproved={(granted) => {
+          const waiter = approvalWaiter.current;
+          approvalWaiter.current = null;
+          setApproval(null);
+          waiter?.(granted.overrideId);
+        }}
       />
 
       {checkout ? (

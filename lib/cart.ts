@@ -9,6 +9,19 @@ export type CartComboChoice = {
   modifierIds: string[];
 };
 
+/**
+ * A discount as the cashier gives it: a percentage in basis points (1000 =
+ * 10%) or a fixed amount in minor units, always with a reason.
+ */
+export type Discount = {
+  type: "percent" | "fixed";
+  value: number;
+  reason: string;
+};
+
+/** A price the cashier charges instead of the menu price, for one unit. */
+export type PriceChange = { unitPrice: number; reason: string };
+
 export type CartLine = {
   id: string;
   menuItemId: string;
@@ -16,6 +29,8 @@ export type CartLine = {
   modifierIds: string[];
   combo: CartComboChoice[];
   notes: string;
+  discount?: Discount | null;
+  price?: PriceChange | null;
 };
 
 export type OrderType = "takeaway" | "dine_in" | "delivery";
@@ -27,6 +42,8 @@ export type Cart = {
   deliveryAddress: string;
   notes: string;
   lines: CartLine[];
+  /** A discount on the whole order, shared across the lines. */
+  discount?: Discount | null;
 };
 
 export const MAX_QUANTITY = 999;
@@ -48,12 +65,29 @@ function sameIds(a: string[], b: string[]): boolean {
   return b.every((id) => set.has(id));
 }
 
-/** Same item with the same choices and notes: such lines are merged. */
+function sameDiscount(
+  a: Discount | null | undefined,
+  b: Discount | null | undefined,
+): boolean {
+  if (!a || !b) return !a && !b;
+  return a.type === b.type && a.value === b.value && a.reason === b.reason;
+}
+
+/**
+ * Same item with the same choices, notes, discount and price: such lines
+ * are merged.
+ */
 export function linesMatch(
   a: Omit<CartLine, "id" | "quantity">,
   b: Omit<CartLine, "id" | "quantity">,
 ): boolean {
   if (a.menuItemId !== b.menuItemId || a.notes.trim() !== b.notes.trim())
+    return false;
+  if (!sameDiscount(a.discount, b.discount)) return false;
+  if (
+    (a.price?.unitPrice ?? null) !== (b.price?.unitPrice ?? null) ||
+    (a.price?.reason ?? null) !== (b.price?.reason ?? null)
+  )
     return false;
   if (
     !sameIds(a.modifierIds, b.modifierIds) ||
@@ -118,6 +152,8 @@ export function changeQuantity(
   };
 }
 
+type SubmitDiscount = { type: Discount["type"]; value: number; reason: string };
+
 export type SubmitOrderPayload = {
   id: string;
   order_type: OrderType;
@@ -126,12 +162,19 @@ export type SubmitOrderPayload = {
   delivery_address: string | null;
   notes: string | null;
   client_created_at: string;
+  discount: SubmitDiscount | null;
+  /** A manager's approval for discounts above the cashier's limit. */
+  discount_override_id: string | null;
+  /** A manager's approval for the price changes. */
+  price_override_id: string | null;
   lines: {
     id: string;
     menu_item_id: string;
     quantity: number;
     modifier_ids: string[];
     notes: string | null;
+    discount: SubmitDiscount | null;
+    price: { unit_price: number; reason: string } | null;
     combo: {
       id: string;
       slot_id: string;
@@ -141,6 +184,16 @@ export type SubmitOrderPayload = {
   }[];
 };
 
+function submitDiscount(discount: Discount | null | undefined) {
+  return discount
+    ? {
+        type: discount.type,
+        value: discount.value,
+        reason: discount.reason.trim(),
+      }
+    : null;
+}
+
 /**
  * What the till sends to submit_order. No prices: the server works them out.
  * Combo parts get their own ids here so a resend is identical.
@@ -149,6 +202,7 @@ export function toSubmitPayload(
   cart: Cart,
   newId: () => string,
   clientCreatedAt: string,
+  approvals: { discountOverrideId?: string; priceOverrideId?: string } = {},
 ): SubmitOrderPayload {
   const text = (value: string) => (value.trim() === "" ? null : value.trim());
   return {
@@ -161,12 +215,19 @@ export function toSubmitPayload(
       cart.orderType === "delivery" ? text(cart.deliveryAddress) : null,
     notes: text(cart.notes),
     client_created_at: clientCreatedAt,
+    discount: submitDiscount(cart.discount),
+    discount_override_id: approvals.discountOverrideId ?? null,
+    price_override_id: approvals.priceOverrideId ?? null,
     lines: cart.lines.map((line) => ({
       id: line.id,
       menu_item_id: line.menuItemId,
       quantity: line.quantity,
       modifier_ids: line.modifierIds,
       notes: text(line.notes),
+      discount: submitDiscount(line.discount),
+      price: line.price
+        ? { unit_price: line.price.unitPrice, reason: line.price.reason.trim() }
+        : null,
       combo: line.combo.map((choice) => ({
         id: newId(),
         slot_id: choice.slotId,
@@ -175,4 +236,11 @@ export function toSubmitPayload(
       })),
     })),
   };
+}
+
+/** Whether the cart has any discount or changed price. */
+export function hasAdjustments(cart: Cart): boolean {
+  return Boolean(
+    cart.discount || cart.lines.some((l) => l.discount || l.price),
+  );
 }

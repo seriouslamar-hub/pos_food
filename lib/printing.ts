@@ -27,6 +27,7 @@ export type PaperWidth = 58 | 80;
 export type PrintJob =
   | { kind: "receipt"; order: OrderSummary; copy?: boolean }
   | { kind: "kitchen"; order: OrderSummary }
+  | { kind: "refund"; order: OrderSummary; refundId: string }
   | { kind: "report"; report: SalesReport }
   | {
       kind: "shift_close";

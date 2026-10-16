@@ -380,6 +380,9 @@ describe("cart", () => {
         },
       ],
     });
-    expect(JSON.stringify(payload)).not.toMatch(/price|total/);
+    // No amounts: the server prices everything. (A price the cashier
+    // changes on purpose is sent, and checked against their permissions.)
+    expect(JSON.stringify(payload)).not.toMatch(/unit_price|total/);
+    expect(payload.lines.every((l) => l.price === null)).toBe(true);
   });
 });

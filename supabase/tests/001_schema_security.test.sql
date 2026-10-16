@@ -84,10 +84,14 @@ select is(
     'load_sample_menu',
     'open_business_day',
     'open_shift',
+    'order_audit_trail',
     'record_cash_movement',
     'record_payments',
+    'refund_order',
     'reorder_menu',
+    'report_exceptions',
     'review_shift',
+    'search_orders',
     'send_to_kitchen',
     'set_availability',
     'set_branch_price',
@@ -97,6 +101,7 @@ select is(
     'submit_order',
     'till_state',
     'verify_override',
+    'void_order_items',
     'x_report'
   ],
   'authenticated can execute only the allowed API functions'

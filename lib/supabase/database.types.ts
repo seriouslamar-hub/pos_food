@@ -790,6 +790,7 @@ export type Database = {
           branch_id: string
           combo_slot_name: string | null
           created_at: string
+          discount: Json | null
           id: string
           kds_station_id: string | null
           line_discount: number
@@ -800,9 +801,15 @@ export type Database = {
           modifiers: Json
           name_snapshot: string
           notes: string | null
+          order_discount_share: number
           order_id: string
           parent_item_id: string | null
+          price_approved_by: string | null
+          price_override_from: number | null
+          price_override_reason: string | null
           quantity: number
+          refund_id: string | null
+          refunded_at: string | null
           short_name_snapshot: string
           sort_order: number
           status: Database["public"]["Enums"]["order_item_status"]
@@ -817,6 +824,7 @@ export type Database = {
           branch_id: string
           combo_slot_name?: string | null
           created_at?: string
+          discount?: Json | null
           id: string
           kds_station_id?: string | null
           line_discount?: number
@@ -827,9 +835,15 @@ export type Database = {
           modifiers?: Json
           name_snapshot: string
           notes?: string | null
+          order_discount_share?: number
           order_id: string
           parent_item_id?: string | null
+          price_approved_by?: string | null
+          price_override_from?: number | null
+          price_override_reason?: string | null
           quantity: number
+          refund_id?: string | null
+          refunded_at?: string | null
           short_name_snapshot: string
           sort_order?: number
           status?: Database["public"]["Enums"]["order_item_status"]
@@ -844,6 +858,7 @@ export type Database = {
           branch_id?: string
           combo_slot_name?: string | null
           created_at?: string
+          discount?: Json | null
           id?: string
           kds_station_id?: string | null
           line_discount?: number
@@ -854,9 +869,15 @@ export type Database = {
           modifiers?: Json
           name_snapshot?: string
           notes?: string | null
+          order_discount_share?: number
           order_id?: string
           parent_item_id?: string | null
+          price_approved_by?: string | null
+          price_override_from?: number | null
+          price_override_reason?: string | null
           quantity?: number
+          refund_id?: string | null
+          refunded_at?: string | null
           short_name_snapshot?: string
           sort_order?: number
           status?: Database["public"]["Enums"]["order_item_status"]
@@ -910,6 +931,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "order_items_price_approved_by_fkey"
+            columns: ["price_approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_refund_id_fkey"
+            columns: ["refund_id"]
+            isOneToOne: false
+            referencedRelation: "refunds"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "order_items_voided_by_fkey"
             columns: ["voided_by"]
             isOneToOne: false
@@ -930,6 +965,8 @@ export type Database = {
           customer_phone: string | null
           delivery_address: string | null
           device_id: string | null
+          discount: Json | null
+          discount_approved_by: string | null
           discount_total: number
           id: string
           is_offline: boolean
@@ -959,6 +996,8 @@ export type Database = {
           customer_phone?: string | null
           delivery_address?: string | null
           device_id?: string | null
+          discount?: Json | null
+          discount_approved_by?: string | null
           discount_total?: number
           id: string
           is_offline?: boolean
@@ -988,6 +1027,8 @@ export type Database = {
           customer_phone?: string | null
           delivery_address?: string | null
           device_id?: string | null
+          discount?: Json | null
+          discount_approved_by?: string | null
           discount_total?: number
           id?: string
           is_offline?: boolean
@@ -1019,6 +1060,13 @@ export type Database = {
             columns: ["device_id"]
             isOneToOne: false
             referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_discount_approved_by_fkey"
+            columns: ["discount_approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
           {
@@ -1333,6 +1381,123 @@ export type Database = {
           },
         ]
       }
+      refunds: {
+        Row: {
+          amount: number
+          approved_by: string | null
+          branch_id: string
+          client_created_at: string | null
+          created_at: string
+          device_id: string | null
+          id: string
+          line_ids: string[]
+          method: Database["public"]["Enums"]["payment_method_type"]
+          method_name: string
+          order_id: string
+          payment_method_id: string | null
+          pos_session_id: string | null
+          reason: string
+          reference: string | null
+          shift_id: string
+          staff_id: string
+        }
+        Insert: {
+          amount: number
+          approved_by?: string | null
+          branch_id: string
+          client_created_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          id: string
+          line_ids?: string[]
+          method: Database["public"]["Enums"]["payment_method_type"]
+          method_name: string
+          order_id: string
+          payment_method_id?: string | null
+          pos_session_id?: string | null
+          reason: string
+          reference?: string | null
+          shift_id: string
+          staff_id: string
+        }
+        Update: {
+          amount?: number
+          approved_by?: string | null
+          branch_id?: string
+          client_created_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          id?: string
+          line_ids?: string[]
+          method?: Database["public"]["Enums"]["payment_method_type"]
+          method_name?: string
+          order_id?: string
+          payment_method_id?: string | null
+          pos_session_id?: string | null
+          reason?: string
+          reference?: string | null
+          shift_id?: string
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_pos_session_id_fkey"
+            columns: ["pos_session_id"]
+            isOneToOne: false
+            referencedRelation: "pos_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           permission: string
@@ -1596,6 +1761,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      allocate_discount: {
+        Args: { p_amounts: number[]; p_discount: number }
+        Returns: number[]
+      }
       branch_setting: {
         Args: { p_branch_id: string; p_key: string }
         Returns: Json
@@ -1695,6 +1864,10 @@ export type Database = {
       }
       day_report: { Args: { p_day_id: string }; Returns: Json }
       device_heartbeat: { Args: never; Returns: undefined }
+      discount_amount: {
+        Args: { p_amount: number; p_discount: Json }
+        Returns: number
+      }
       end_pos_session: { Args: { p_session_id: string }; Returns: undefined }
       find_staff_by_pin: {
         Args: { p_branch_id: string; p_pin: string }
@@ -1729,6 +1902,10 @@ export type Database = {
         }
         Returns: Json
       }
+      order_audit_trail: {
+        Args: { p_order_id: string; p_session_id?: string }
+        Returns: Json
+      }
       order_line_combo: {
         Args: { p_branch_id: string; p_combo_id: string; p_selections: Json }
         Returns: Json
@@ -1751,9 +1928,17 @@ export type Database = {
         Args: { p_order_id: string; p_payments: Json; p_session_id: string }
         Returns: Json
       }
+      refund_order: {
+        Args: { p_refund: Json; p_session_id: string }
+        Returns: Json
+      }
       reorder_menu: {
         Args: { p_ids: string[]; p_kind: string; p_parent_id?: string }
         Returns: undefined
+      }
+      report_exceptions: {
+        Args: { p_branch_id: string; p_from: string; p_to: string }
+        Returns: Json
       }
       require_open_shift: {
         Args: { p_device_id: string; p_staff_id: string }
@@ -1814,6 +1999,16 @@ export type Database = {
         Args: { p_day_id: string; p_shift_id: string }
         Returns: Json
       }
+      search_orders: {
+        Args: {
+          p_amount?: number
+          p_branch_id: string
+          p_business_date?: string
+          p_number?: string
+          p_reference?: string
+        }
+        Returns: Json
+      }
       send_order_lines_to_kitchen: {
         Args: { p_order_id: string }
         Returns: undefined
@@ -1867,6 +2062,16 @@ export type Database = {
           p_permission: string
           p_pin: string
           p_reason?: string
+          p_session_id: string
+        }
+        Returns: Json
+      }
+      void_order_items: {
+        Args: {
+          p_item_ids: string[]
+          p_order_id: string
+          p_override_id?: string
+          p_reason: string
           p_session_id: string
         }
         Returns: Json

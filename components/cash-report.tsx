@@ -154,6 +154,9 @@ export function CashReport({
         {cash.cash_sales !== undefined ? (
           <Row label="Cash sales" value={money(cash.cash_sales)} />
         ) : null}
+        {cash.cash_refunds ? (
+          <Row label="Cash refunds" value={`−${money(cash.cash_refunds)}`} />
+        ) : null}
         {cash.paid_in ? (
           <Row label="Paid in" value={money(cash.paid_in)} />
         ) : null}

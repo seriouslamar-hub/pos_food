@@ -1,14 +1,14 @@
 "use client";
 
-import { MinusIcon, PlusIcon } from "lucide-react";
+import { EllipsisIcon, MinusIcon, PlusIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Cart, CartLine, OrderType } from "@/lib/cart";
 import type { MenuIndex } from "@/lib/menu";
 import { formatAmount } from "@/lib/money";
-import { ORDER_TYPE_LABELS } from "@/lib/orders";
-import type { CartTotals } from "@/lib/pricing";
+import { describeDiscount, ORDER_TYPE_LABELS } from "@/lib/orders";
+import { unitPrice, type CartTotals } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 
 /** The right-hand side of the till: order type, lines, totals and actions. */
@@ -29,6 +29,8 @@ export function CartPanel({
   onClear,
   onCharge,
   onSendToKitchen,
+  onLineOptions,
+  onOrderDiscount,
 }: {
   cart: Cart;
   index: MenuIndex;
@@ -49,7 +51,11 @@ export function CartPanel({
   onCharge: () => void;
   /** Pay-later dine-in is on: send the order to the kitchen unpaid. */
   onSendToKitchen?: () => void;
+  /** Discount or price for one line. */
+  onLineOptions: (line: CartLine) => void;
+  onOrderDiscount: () => void;
 }) {
+  const money = (amount: number) => formatAmount(amount, currency);
   const empty = cart.lines.length === 0;
   const exclusiveTax = totals.taxes
     .filter((t) => !t.inclusive)
@@ -154,6 +160,23 @@ export function CartPanel({
                   {line.notes ? (
                     <span className="text-sm italic">“{line.notes}”</span>
                   ) : null}
+                  {line.price ? (
+                    <span className="text-sm" data-testid="line-price-change">
+                      {money(line.price.unitPrice)} each (menu{" "}
+                      {money(unitPrice(line, index) ?? 0)}) ·{" "}
+                      {line.price.reason}
+                    </span>
+                  ) : null}
+                  {line.discount && price ? (
+                    <span
+                      className="text-sm text-emerald-700 dark:text-emerald-400"
+                      data-testid="line-discount"
+                    >
+                      {describeDiscount(line.discount, money)} off (
+                      {line.discount.reason}) −
+                      {money(price.discount - price.orderDiscountShare)}
+                    </span>
+                  ) : null}
                   {problem ? (
                     <span className="text-sm font-medium text-destructive">
                       {problem}
@@ -165,6 +188,16 @@ export function CartPanel({
                     {formatAmount(price?.gross ?? 0, currency)}
                   </span>
                   <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon-lg"
+                      className="size-11"
+                      aria-label={`Discount or price for ${item?.name ?? ""}`}
+                      disabled={!item}
+                      onClick={() => onLineOptions(line)}
+                    >
+                      <EllipsisIcon />
+                    </Button>
                     <Button
                       variant="outline"
                       size="icon-lg"
@@ -199,6 +232,20 @@ export function CartPanel({
               {formatAmount(totals.subtotal, currency)}
             </dd>
           </div>
+          {totals.discountTotal ? (
+            <div
+              className="flex justify-between text-emerald-700 dark:text-emerald-400"
+              data-testid="cart-discounts"
+            >
+              <dt>
+                Discounts
+                {cart.discount
+                  ? ` (order ${describeDiscount(cart.discount, money)})`
+                  : ""}
+              </dt>
+              <dd className="tabular-nums">−{money(totals.discountTotal)}</dd>
+            </div>
+          ) : null}
           {exclusiveTax ? (
             <div className="flex justify-between">
               <dt>Tax</dt>
@@ -229,10 +276,11 @@ export function CartPanel({
             </AlertDescription>
           </Alert>
         ) : null}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           <Button
             variant="outline"
             size="touch"
+            className="px-2"
             disabled={empty || busy}
             onClick={onHold}
           >
@@ -241,6 +289,7 @@ export function CartPanel({
           <Button
             variant="outline"
             size="touch"
+            className="px-2"
             disabled={busy}
             onClick={onRecall}
           >
@@ -249,6 +298,16 @@ export function CartPanel({
           <Button
             variant="outline"
             size="touch"
+            className="px-2"
+            disabled={empty || busy}
+            onClick={onOrderDiscount}
+          >
+            Discount
+          </Button>
+          <Button
+            variant="outline"
+            size="touch"
+            className="px-2"
             disabled={empty || busy}
             onClick={onClear}
           >

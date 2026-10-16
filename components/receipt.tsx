@@ -20,8 +20,17 @@ export function Receipt({
 }) {
   const { branch } = order;
   const money = (amount: number) => formatAmount(amount, branch.currency_code);
-  const lines = order.lines.filter((l) => l.status !== "voided");
-  const payments = order.payments.filter((p) => p.status === "captured");
+  // Voided lines weren't charged; refunded ones were, and say so.
+  const lines = order.lines.filter(
+    (l) => l.status !== "voided" || l.refunded_at !== null,
+  );
+  const payments = order.payments;
+  const orderDiscount = order.lines.reduce(
+    (sum, l) =>
+      sum +
+      (l.status === "voided" && !l.refunded_at ? 0 : l.order_discount_share),
+    0,
+  );
 
   return (
     <article
@@ -90,11 +99,27 @@ export function Receipt({
             {line.notes ? (
               <p className="ticket-indent">“{line.notes}”</p>
             ) : null}
-            {line.line_discount ? (
+            {line.price_override_from !== null ? (
+              <p className="ticket-indent">
+                Price changed from {money(line.price_override_from)}
+                {line.price_override_reason
+                  ? ` (${line.price_override_reason})`
+                  : ""}
+              </p>
+            ) : null}
+            {line.line_discount - line.order_discount_share > 0 ? (
               <div className="ticket-row ticket-indent">
-                <span>Discount</span>
-                <span>−{money(line.line_discount)}</span>
+                <span>
+                  Discount
+                  {line.discount ? ` (${line.discount.reason})` : ""}
+                </span>
+                <span>
+                  −{money(line.line_discount - line.order_discount_share)}
+                </span>
               </div>
+            ) : null}
+            {line.refunded_at ? (
+              <p className="ticket-indent ticket-strong">Refunded</p>
             ) : null}
           </li>
         ))}
@@ -105,10 +130,13 @@ export function Receipt({
           <dt>Subtotal</dt>
           <dd>{money(order.subtotal)}</dd>
         </div>
-        {order.discount_total ? (
+        {orderDiscount ? (
           <div className="ticket-row">
-            <dt>Discounts</dt>
-            <dd>−{money(order.discount_total)}</dd>
+            <dt>
+              Order discount
+              {order.discount ? ` (${order.discount.reason})` : ""}
+            </dt>
+            <dd>−{money(orderDiscount)}</dd>
           </div>
         ) : null}
         {order.taxes.map((t) => (
@@ -151,11 +179,86 @@ export function Receipt({
         </dl>
       ) : null}
 
+      {order.refunds.length ? (
+        <dl className="ticket-rule">
+          {order.refunds.map((r) => (
+            <div key={r.id}>
+              <div className="ticket-row ticket-strong">
+                <dt>Refund · {r.method_name}</dt>
+                <dd>−{money(r.amount)}</dd>
+              </div>
+              <p className="ticket-indent">{r.reason}</p>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+
       {branch.receipt_footer ? (
         <p className="ticket-center ticket-pre ticket-rule">
           {branch.receipt_footer}
         </p>
       ) : null}
+    </article>
+  );
+}
+
+/** Printed when money goes back: for the customer, or the cash bag. */
+export function RefundSlip({
+  order,
+  refundId,
+  paperWidth = 80,
+}: {
+  order: OrderSummary;
+  refundId: string;
+  paperWidth?: PaperWidth;
+}) {
+  const { branch } = order;
+  const money = (amount: number) => formatAmount(amount, branch.currency_code);
+  const refund = order.refunds.find((r) => r.id === refundId);
+  if (!refund) return null;
+  const lines = order.lines.filter((l) => refund.line_ids.includes(l.id));
+  return (
+    <article
+      className="ticket"
+      data-paper={paperWidth}
+      data-testid="refund-slip"
+      aria-label={`Refund for order ${order.order_number}`}
+    >
+      <header className="ticket-center">
+        <p className="ticket-shop">{branch.name}</p>
+        <p className="ticket-big">Refund</p>
+        <p>Order {order.order_number}</p>
+        <p>{formatInZone(refund.created_at, branch.timezone)}</p>
+      </header>
+      <ul className="ticket-rule">
+        {lines.map((l) => (
+          <li key={l.id} className="ticket-row">
+            <span>
+              {l.quantity} × {l.name}
+            </span>
+            <span>{money(l.line_total)}</span>
+          </li>
+        ))}
+      </ul>
+      <dl className="ticket-rule">
+        <div className="ticket-row ticket-big">
+          <dt>Refunded</dt>
+          <dd>{money(refund.amount)}</dd>
+        </div>
+        <div className="ticket-row">
+          <dt>By</dt>
+          <dd>{refund.method_name}</dd>
+        </div>
+        {refund.reference ? (
+          <p className="ticket-indent">Ref {refund.reference}</p>
+        ) : null}
+        <p>Reason: {refund.reason}</p>
+        {refund.staff_name ? <p>Refunded by {refund.staff_name}</p> : null}
+        {refund.approved_by_name ? (
+          <p>Approved by {refund.approved_by_name}</p>
+        ) : null}
+      </dl>
+      <p className="ticket-rule">Customer signature: ______________</p>
     </article>
   );
 }

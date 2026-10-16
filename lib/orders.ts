@@ -1,4 +1,5 @@
 /** A saved order as returned by submit_order / get_order (order_summary). */
+import { formatBps } from "./percent";
 
 export type OrderLineSummary = {
   id: string;
@@ -15,6 +16,15 @@ export type OrderLineSummary = {
   line_total: number;
   status: "pending" | "sent" | "ready" | "voided";
   kds_station_id: string | null;
+  /** The line's own discount as given (line_discount adds the order share). */
+  discount: OrderDiscount | null;
+  order_discount_share: number;
+  /** Set when the cashier changed the price: the menu price it replaced. */
+  price_override_from: number | null;
+  price_override_reason: string | null;
+  voided_at: string | null;
+  void_reason: string | null;
+  refunded_at: string | null;
   components: {
     id: string;
     name: string;
@@ -22,7 +32,27 @@ export type OrderLineSummary = {
     slot: string | null;
     modifiers: { name: string }[];
     kds_station_id: string | null;
+    status: "pending" | "sent" | "ready" | "voided";
   }[];
+};
+
+export type OrderDiscount = {
+  type: "percent" | "fixed";
+  value: number;
+  reason: string;
+};
+
+export type OrderRefund = {
+  id: string;
+  amount: number;
+  method: "cash" | "card" | "mobile_money" | "other";
+  method_name: string;
+  reference: string | null;
+  reason: string;
+  line_ids: string[];
+  created_at: string;
+  staff_name: string | null;
+  approved_by_name: string | null;
 };
 
 export type OrderPayment = {
@@ -70,10 +100,13 @@ export type OrderSummary = {
   notes: string | null;
   subtotal: number;
   discount_total: number;
+  /** The order-level discount as given, if any. */
+  discount: OrderDiscount | null;
   tax_total: number;
   total: number;
   paid_at: string | null;
   sent_to_kitchen_at: string | null;
+  staff_id: string | null;
   staff_name: string | null;
   device_code: string | null;
   branch: ReceiptBranch;
@@ -87,6 +120,8 @@ export type OrderSummary = {
   payments: OrderPayment[];
   amount_paid: number;
   change_given: number;
+  refunds: OrderRefund[];
+  refunded_total: number;
 };
 
 export function parseOrderSummary(json: unknown): OrderSummary {
@@ -102,11 +137,35 @@ export function parseOrderSummary(json: unknown): OrderSummary {
   return {
     ...(order as OrderSummary),
     taxes: order.taxes ?? [],
+    discount: order.discount ?? null,
     payments: order.payments ?? [],
     amount_paid: order.amount_paid ?? 0,
     change_given: order.change_given ?? 0,
+    refunds: order.refunds ?? [],
+    refunded_total: order.refunded_total ?? 0,
   };
 }
+
+/** What a discount is, for people: "10%" or "$1.50". */
+export function describeDiscount(
+  discount: OrderDiscount,
+  format: (amount: number) => string,
+): string {
+  return discount.type === "percent"
+    ? formatBps(discount.value)
+    : format(discount.value);
+}
+
+export const ORDER_STATUS_LABELS: Record<OrderSummary["status"], string> = {
+  open: "Not paid",
+  paid: "Paid",
+  in_kitchen: "In the kitchen",
+  ready: "Ready",
+  collected: "Collected",
+  voided: "Voided",
+  refunded: "Refunded",
+  partially_refunded: "Partly refunded",
+};
 
 /** Paid in full. Pay-later dine-in orders reach the kitchen before this. */
 export function isPaid(order: Pick<OrderSummary, "paid_at">): boolean {

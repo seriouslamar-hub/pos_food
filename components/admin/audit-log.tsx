@@ -69,6 +69,10 @@ const ACTION_LABELS: Record<string, string> = {
   "cash.paid_in": "Paid in",
   "cash.paid_out": "Paid out",
   "cash.no_sale": "No sale",
+  "order.discount": "Discount given",
+  "order.price_override": "Price changed",
+  "order.void": "Items voided",
+  "order.refund": "Refund",
 };
 
 export const AUDIT_ENTITIES: { value: string; label: string }[] = [
