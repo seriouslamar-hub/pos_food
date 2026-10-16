@@ -256,7 +256,7 @@ export function CustomerMenu({
         {totals.promotions.map((p) => (
           <div
             key={p.id}
-            className="flex justify-between text-emerald-700 dark:text-emerald-400"
+            className="flex justify-between font-medium text-foreground"
           >
             <span>{p.name}</span>
             <span className="tabular-nums">−{money(p.amount)}</span>

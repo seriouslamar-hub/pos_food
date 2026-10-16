@@ -122,9 +122,7 @@ function AvailabilityRow({
           <span
             className={cn(
               "text-sm font-semibold",
-              available
-                ? "text-green-700 dark:text-green-400"
-                : "text-destructive",
+              available ? "text-foreground" : "text-destructive",
             )}
           >
             {available ? "In stock" : "Out of stock"}

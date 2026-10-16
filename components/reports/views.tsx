@@ -182,7 +182,7 @@ function Stat({
             <span
               className={cn(
                 "font-medium",
-                change > 0 && "text-emerald-700 dark:text-emerald-400",
+                change > 0 && "text-foreground",
                 change < 0 && "text-destructive",
               )}
             >

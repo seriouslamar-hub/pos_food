@@ -693,7 +693,7 @@ export function OrderScreen({
           <div
             role="status"
             data-testid="training-banner"
-            className="rounded-xl bg-amber-400 px-4 py-2 text-center text-lg font-bold text-black"
+            className="rounded-xl bg-white px-4 py-2 text-center text-lg font-bold tracking-wide text-black"
           >
             TRAINING MODE · practice sales don&apos;t count
           </div>

@@ -48,84 +48,178 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
+/*
+ * One look everywhere: black, ash and white glass. Surfaces are see-through
+ * white over a black-to-ash backdrop, with blur and a thin light edge.
+ * There's no light mode; receipts and kitchen tickets still print black on
+ * white (see .ticket below). The only colour is a dim red for errors and
+ * destructive actions.
+ */
+:root,
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  color-scheme: dark;
+  --background: oklch(0.12 0 0);
+  --foreground: oklch(0.97 0 0);
+  --card: oklch(1 0 0 / 7%);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.19 0 0 / 82%);
+  --popover-foreground: oklch(0.97 0 0);
+  --primary: oklch(0.97 0 0);
+  --primary-foreground: oklch(0.13 0 0);
+  --secondary: oklch(1 0 0 / 12%);
+  --secondary-foreground: oklch(0.97 0 0);
+  --muted: oklch(1 0 0 / 8%);
+  --muted-foreground: oklch(0.74 0 0);
+  --accent: oklch(1 0 0 / 12%);
+  --accent-foreground: oklch(0.97 0 0);
+  --destructive: oklch(0.68 0.15 22);
+  --border: oklch(1 0 0 / 13%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(1 0 0 / 45%);
+  --chart-1: oklch(0.95 0 0);
+  --chart-2: oklch(0.78 0 0);
+  --chart-3: oklch(0.62 0 0);
+  --chart-4: oklch(0.86 0 0);
+  --chart-5: oklch(0.5 0 0);
+  --radius: 0.75rem;
+  --sidebar: oklch(1 0 0 / 5%);
+  --sidebar-foreground: oklch(0.97 0 0);
+  --sidebar-primary: oklch(0.97 0 0);
+  --sidebar-primary-foreground: oklch(0.13 0 0);
+  --sidebar-accent: oklch(1 0 0 / 10%);
+  --sidebar-accent-foreground: oklch(0.97 0 0);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(1 0 0 / 45%);
+  --glass-blur: 18px;
+  --glass-edge:
+    inset 0 1px 0 0 oklch(1 0 0 / 16%), inset 0 0 0 1px oklch(1 0 0 / 4%);
+  --glass-shadow: 0 10px 40px -12px oklch(0 0 0 / 70%);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
     @apply font-sans;
+    background: var(--background);
+  }
+  body {
+    @apply text-foreground;
+    min-height: 100dvh;
+    /* Black with soft ash light, fixed so it stays put while scrolling. */
+    background:
+      radial-gradient(
+        48rem 34rem at 8% -6%,
+        oklch(0.52 0 0 / 60%),
+        transparent 62%
+      ),
+      radial-gradient(
+        42rem 30rem at 102% 8%,
+        oklch(0.44 0 0 / 50%),
+        transparent 60%
+      ),
+      radial-gradient(
+        60rem 40rem at 45% 112%,
+        oklch(0.38 0 0 / 55%),
+        transparent 62%
+      ),
+      linear-gradient(
+        160deg,
+        oklch(0.17 0 0),
+        oklch(0.09 0 0) 55%,
+        oklch(0.14 0 0)
+      );
+    background-attachment: fixed;
+  }
+  ::selection {
+    background: oklch(1 0 0 / 85%);
+    color: oklch(0.13 0 0);
+  }
+  /* Thin ash scrollbars. */
+  * {
+    scrollbar-color: oklch(1 0 0 / 22%) transparent;
+    scrollbar-width: thin;
+  }
+}
+
+/* Glass: cards, panels, dialogs, menus and bordered boxes. */
+@layer utilities {
+  [data-slot="card"],
+  [data-slot="dialog-content"],
+  [data-slot="alert"],
+  .bg-card,
+  .bg-popover,
+  .bg-sidebar,
+  :is(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl).border:not(
+      input,
+      select,
+      textarea,
+      button,
+      a,
+      label,
+      [role="radio"],
+      [role="tab"]
+    ) {
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(120%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(120%);
+    box-shadow: var(--glass-edge), var(--glass-shadow);
+  }
+  :is(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl).border:not(
+      input,
+      select,
+      textarea,
+      button,
+      a,
+      label,
+      [role="radio"],
+      [role="tab"],
+      .bg-card,
+      .bg-popover,
+      .bg-background,
+      .bg-muted,
+      .bg-foreground,
+      .bg-primary,
+      .bg-secondary
+    ) {
+    background-color: oklch(1 0 0 / 6%);
+  }
+  [data-slot="dialog-content"] {
+    background-color: var(--popover);
+    border-color: oklch(1 0 0 / 16%);
+  }
+  [data-slot="dialog-overlay"] {
+    background-color: oklch(0 0 0 / 55%);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+  /* Inputs: frosted wells. */
+  input:not([type="checkbox"], [type="radio"]),
+  select,
+  textarea {
+    background-color: oklch(1 0 0 / 5%);
+  }
+  select option {
+    background: oklch(0.18 0 0);
+    color: oklch(0.97 0 0);
+  }
+  /* White buttons glow a little. */
+  .bg-primary,
+  .bg-foreground {
+    box-shadow:
+      0 0 0 1px oklch(1 0 0 / 30%),
+      0 6px 24px -10px oklch(1 0 0 / 40%);
+  }
+  /* Header and nav bars: glass that stays on top. */
+  header.border-b,
+  nav.border-b {
+    background-color: oklch(0.12 0 0 / 55%);
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    backdrop-filter: blur(var(--glass-blur));
+  }
+  /* Category colours from the menu show as greys. */
+  [data-menu-swatch] {
+    filter: grayscale(1);
   }
 }
 

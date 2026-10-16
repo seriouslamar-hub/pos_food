@@ -178,7 +178,7 @@ export async function Readiness() {
             >
               {c.done ? (
                 <CheckCircle2Icon
-                  className="mt-0.5 size-5 shrink-0 text-emerald-600"
+                  className="mt-0.5 size-5 shrink-0 text-foreground"
                   aria-label="Done"
                 />
               ) : (

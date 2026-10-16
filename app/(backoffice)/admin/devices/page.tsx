@@ -104,7 +104,7 @@ async function Devices() {
                               <span className="flex items-center gap-2">
                                 <span
                                   aria-hidden
-                                  className={`size-2 rounded-full ${status.online ? "bg-green-600" : "bg-muted-foreground/40"}`}
+                                  className={`size-2 rounded-full ${status.online ? "bg-foreground shadow-[0_0_8px_white]" : "bg-muted-foreground/40"}`}
                                 />
                                 {status.label}
                                 {d.pending_sync ? (

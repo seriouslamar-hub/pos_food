@@ -174,7 +174,7 @@ export function CartPanel({
                   ) : null}
                   {line.discount && price ? (
                     <span
-                      className="text-sm text-emerald-700 dark:text-emerald-400"
+                      className="text-sm font-medium text-foreground"
                       data-testid="line-discount"
                     >
                       {describeDiscount(line.discount, money)} off (
@@ -239,7 +239,7 @@ export function CartPanel({
           </div>
           {totals.staffDiscountTotal ? (
             <div
-              className="flex justify-between text-emerald-700 dark:text-emerald-400"
+              className="flex justify-between font-medium text-foreground"
               data-testid="cart-discounts"
             >
               <dt>
@@ -256,7 +256,7 @@ export function CartPanel({
           {totals.promotions.map((p) => (
             <div
               key={p.id}
-              className="flex justify-between text-emerald-700 dark:text-emerald-400"
+              className="flex justify-between font-medium text-foreground"
               data-testid="cart-promotion"
             >
               <dt>{p.name}</dt>
@@ -272,7 +272,7 @@ export function CartPanel({
           ) : null}
           {totals.loyaltyDiscount ? (
             <div
-              className="flex justify-between text-emerald-700 dark:text-emerald-400"
+              className="flex justify-between font-medium text-foreground"
               data-testid="cart-points"
             >
               <dt>Points ({totals.loyaltyPoints})</dt>

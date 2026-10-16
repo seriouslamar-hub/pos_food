@@ -662,7 +662,7 @@ export function StockCountForm({
     >
       <FormError message={error} />
       {saved ? (
-        <p className="text-sm text-emerald-700">
+        <p className="text-sm font-medium text-foreground">
           Count saved. It waits for approval below.
         </p>
       ) : null}

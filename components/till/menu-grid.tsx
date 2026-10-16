@@ -61,6 +61,7 @@ export function MenuGrid({
                 <span
                   aria-hidden
                   className="size-3 rounded-full"
+                  data-menu-swatch
                   style={{ backgroundColor: c.colour }}
                 />
               ) : null}

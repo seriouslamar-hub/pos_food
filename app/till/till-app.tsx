@@ -136,7 +136,7 @@ function TillShell({
   );
 
   return (
-    <div className="flex h-dvh flex-col bg-background">
+    <div className="flex h-dvh flex-col">
       <header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
         <span className="font-semibold">
           {branchName} · {deviceName} ({deviceCode})
