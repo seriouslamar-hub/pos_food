@@ -1,5 +1,6 @@
 "use server";
 
+import { TOO_MANY_ATTEMPTS, withinRateLimit } from "@/lib/rate-limit";
 import { randomBytes } from "node:crypto";
 import { refresh } from "next/cache";
 import { dbErrorMessage, type ActionResult } from "@/lib/action-result";
@@ -107,6 +108,7 @@ export async function createStaff(
 ): Promise<
   ActionResult<{ id: string; credentials?: Credentials; pinError?: string }>
 > {
+  if (!(await withinRateLimit("staff.create", 20))) return TOO_MANY_ATTEMPTS;
   if (!(await getActionStaff(["admin"]))) {
     return { ok: false, error: "Only an admin can add staff here." };
   }
@@ -273,6 +275,8 @@ export async function updateStaff(
 export async function createStaffLogin(
   id: string,
 ): Promise<ActionResult<{ credentials: Credentials }>> {
+  if (!(await withinRateLimit("staff.create_login", 20)))
+    return TOO_MANY_ATTEMPTS;
   if (!(await getActionStaff(["admin"])))
     return { ok: false, error: "Only an admin can create logins." };
   const supabase = await createClient();
@@ -299,6 +303,8 @@ export async function createStaffLogin(
 export async function resetStaffPassword(
   id: string,
 ): Promise<ActionResult<{ credentials: Credentials }>> {
+  if (!(await withinRateLimit("staff.reset_password", 20)))
+    return TOO_MANY_ATTEMPTS;
   const actor = await getActionStaff(["admin"]);
   if (!actor) return { ok: false, error: "Only an admin can reset passwords." };
   const supabase = await createClient();
@@ -363,6 +369,8 @@ export async function setStaffPin(
 export async function createCashier(
   values: CashierFormValues,
 ): Promise<ActionResult<{ id: string; pinError?: string }>> {
+  if (!(await withinRateLimit("staff.create_cashier", 30)))
+    return TOO_MANY_ATTEMPTS;
   const actor = await getActionStaff(["manager"]);
   if (!actor?.branchId)
     return { ok: false, error: "Only a branch manager can add cashiers here." };

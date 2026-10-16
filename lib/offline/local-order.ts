@@ -66,6 +66,8 @@ export function localOrderSummary({
       kds_station_id: item?.kds_station_id ?? null,
       discount: line.discount ?? null,
       order_discount_share: price?.orderDiscountShare ?? 0,
+      promo_discount: price?.promoDiscount ?? 0,
+      loyalty_discount: price?.loyaltyDiscount ?? 0,
       price_override_from: line.price ? (unitPrice(line, index) ?? 0) : null,
       price_override_reason: line.price?.reason ?? null,
       voided_at: null,
@@ -142,5 +144,8 @@ export function localOrderSummary({
     change_given: orderPayments.reduce((s, p) => s + (p.change_given ?? 0), 0),
     refunds: [],
     refunded_total: 0,
+    training: menu.training ?? false,
+    promotion_total: totals.promotionTotal,
+    promotions: totals.promotions,
   };
 }

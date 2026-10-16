@@ -1,0 +1,23 @@
+name: Uptime check
+
+# Every 15 minutes, check the live app can reach Supabase. A failing run
+# emails the repository's owner (GitHub notifies on failed scheduled runs).
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: GET /api/health
+        run: |
+          for attempt in 1 2 3; do
+            if curl --fail --silent --show-error --max-time 20 https://pos-food-system.vercel.app/api/health; then
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::error::The POS is down or can't reach Supabase"
+          exit 1

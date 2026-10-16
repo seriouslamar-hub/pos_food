@@ -689,6 +689,15 @@ export function OrderScreen({
   return (
     <div className="flex min-h-0 flex-1">
       <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 p-3">
+        {menu.training ? (
+          <div
+            role="status"
+            data-testid="training-banner"
+            className="rounded-xl bg-amber-400 px-4 py-2 text-center text-lg font-bold text-black"
+          >
+            TRAINING MODE · practice sales don&apos;t count
+          </div>
+        ) : null}
         <div className="flex flex-wrap items-center justify-end gap-2">
           <KitchenOrders branchId={branchId} disabled={offline} />
           <OrderLookup

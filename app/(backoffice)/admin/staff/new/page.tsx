@@ -24,6 +24,7 @@ async function NewStaff() {
     supabase
       .from("branches")
       .select("id, name")
+      .is("training_for", null)
       .eq("is_active", true)
       .order("name"),
     getSetting(supabase, "staff.default_cashier_discount_bps", null),

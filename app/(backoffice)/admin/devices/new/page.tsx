@@ -30,6 +30,7 @@ async function NewDevice({
     supabase
       .from("branches")
       .select("id, name")
+      .is("training_for", null)
       .eq("is_active", true)
       .order("name"),
     supabase.from("devices").select("id, branch_id, code"),

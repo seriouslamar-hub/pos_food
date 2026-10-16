@@ -1,5 +1,6 @@
 "use server";
 
+import { TOO_MANY_ATTEMPTS, withinRateLimit } from "@/lib/rate-limit";
 import { getSignedInUser } from "@/lib/auth";
 import {
   ensureDeviceLogin,
@@ -25,6 +26,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export async function registerDevice(
   deviceId: string,
 ): Promise<RegisterDeviceResult> {
+  if (!(await withinRateLimit("device.register", 20))) return TOO_MANY_ATTEMPTS;
   if (!UUID.test(deviceId)) {
     return { ok: false, error: "Choose a device first." };
   }
@@ -85,6 +87,8 @@ export async function registerDevice(
 export async function redeemSetupCode(
   code: string,
 ): Promise<RegisterDeviceResult> {
+  if (!(await withinRateLimit("device.redeem_code", 10)))
+    return TOO_MANY_ATTEMPTS;
   const admin = createAdminClient();
   const taken = await takeSetupCode(admin, code);
   if (!taken) {

@@ -20,6 +20,7 @@ export async function promotionOptions() {
       supabase
         .from("branches")
         .select("id, name")
+        .is("training_for", null)
         .eq("is_active", true)
         .order("name"),
       getMenuCurrency(supabase),

@@ -36,10 +36,12 @@ export function localAdmin() {
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
-/** Clears PIN lockout, open sessions and test settings for the seeded till. */
+/** Clears PIN lockout, rate limits, open sessions and test settings for the seeded till. */
 export async function resetTill() {
   const db = localAdmin();
   await db.from("pin_attempts").delete().eq("device_id", SEED.tillDeviceId);
+  // The suite sets up devices far faster than any person would.
+  await db.from("rate_limits").delete().neq("key", "");
   await db
     .from("pos_sessions")
     .update({ ended_at: new Date().toISOString() })

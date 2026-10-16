@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SerwistProvider } from "@serwist/turbopack/react";
+import { ErrorReporter } from "@/components/error-reporter";
 import { HydrationMarker } from "@/components/hydration-marker";
 import "./globals.css";
 
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
         </SerwistProvider>
         <HydrationMarker />
+        <ErrorReporter />
       </body>
     </html>
   );

@@ -7,6 +7,7 @@ import { deviceStatus, requestTime } from "@/lib/devices";
 import { createClient } from "@/lib/supabase/server";
 import { DeviceForm } from "../device-form";
 import { DeviceAccessPanel } from "../setup-code-panel";
+import { TrainingPanel } from "../training-panel";
 
 export const metadata: Metadata = { title: "Edit device" };
 
@@ -33,14 +34,22 @@ async function EditDevice({
       supabase
         .from("devices")
         .select(
-          "id, branch_id, name, type, code, station, is_active, last_seen_at, auth_user_id",
+          "id, branch_id, home_branch_id, name, type, code, station, is_active, last_seen_at, auth_user_id",
         )
         .eq("id", deviceId)
         .maybeSingle(),
-      supabase.from("branches").select("id, name").order("name"),
+      supabase.from("branches").select("id, name, training_for").order("name"),
       supabase.from("devices").select("id, branch_id, code"),
     ]);
   if (!device) notFound();
+  const homeBranchId = device.home_branch_id ?? device.branch_id;
+  const homeBranchName =
+    (branches ?? []).find((b) => b.id === homeBranchId)?.name ?? "the branch";
+  // Real branches to move it to, plus its current one (a training branch
+  // while in training).
+  const branchChoices = (branches ?? [])
+    .filter((b) => b.training_for === null || b.id === device.branch_id)
+    .map((b) => ({ id: b.id, name: b.name }));
   const status = deviceStatus(device.last_seen_at, requestTime());
 
   return (
@@ -59,10 +68,18 @@ async function EditDevice({
         />
       </section>
       <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">Training mode</h2>
+        <TrainingPanel
+          deviceId={device.id}
+          training={device.home_branch_id !== null}
+          homeBranchName={homeBranchName}
+        />
+      </section>
+      <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Details</h2>
         <DeviceForm
           deviceId={device.id}
-          branches={branches ?? []}
+          branches={branchChoices}
           existing={(devices ?? []).map((d) => ({
             id: d.id,
             branchId: d.branch_id,

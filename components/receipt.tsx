@@ -56,6 +56,14 @@ export function Receipt({
         ) : null}
       </header>
 
+      {order.training ? (
+        <p
+          className="ticket-center ticket-big ticket-rule"
+          data-testid="receipt-training"
+        >
+          TRAINING · NOT A RECEIPT
+        </p>
+      ) : null}
       <div className="ticket-center ticket-rule">
         {copy ? <p className="ticket-strong">COPY</p> : null}
         <p className="ticket-big">Order {order.order_number}</p>

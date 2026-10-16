@@ -81,6 +81,8 @@ export type MenuDoc = {
   /** Promotions running at the branch (not coupons). Missing in old caches. */
   promotions?: MenuPromotion[];
   loyalty?: LoyaltySettings;
+  /** The till is in training mode (a training branch). */
+  training?: boolean;
 };
 
 /** Light structural check of what get_menu returned. */

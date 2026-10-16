@@ -34,7 +34,11 @@ async function EditStaff({ params }: { params: Promise<{ staffId: string }> }) {
       )
       .eq("id", staffId)
       .maybeSingle(),
-    supabase.from("branches").select("id, name").order("name"),
+    supabase
+      .from("branches")
+      .select("id, name")
+      .is("training_for", null)
+      .order("name"),
   ]);
   if (!staff) notFound();
 

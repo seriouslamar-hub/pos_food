@@ -1,5 +1,6 @@
 "use server";
 
+import { TOO_MANY_ATTEMPTS, withinRateLimit } from "@/lib/rate-limit";
 import { refresh } from "next/cache";
 import { dbErrorMessage, type ActionResult } from "@/lib/action-result";
 import { getActionStaff } from "@/lib/auth";
@@ -27,6 +28,7 @@ const NOT_ALLOWED = {
 export async function createDevice(
   values: DeviceFormValues,
 ): Promise<ActionResult<{ id: string; setupCode: SetupCode | null }>> {
+  if (!(await withinRateLimit("device.create", 20))) return TOO_MANY_ATTEMPTS;
   const actor = await getActionStaff(["admin"]);
   if (!actor) return NOT_ALLOWED;
   const parsed = deviceSchema.safeParse(values);
@@ -129,6 +131,8 @@ async function loadDevice(id: string) {
 export async function newSetupCode(
   id: string,
 ): Promise<ActionResult<SetupCode>> {
+  if (!(await withinRateLimit("device.setup_code", 30)))
+    return TOO_MANY_ATTEMPTS;
   const actor = await getActionStaff(["admin"]);
   if (!actor) return NOT_ALLOWED;
   const device = await loadDevice(id);
@@ -148,6 +152,8 @@ export async function newSetupCode(
 export async function resetDeviceLogin(
   id: string,
 ): Promise<ActionResult<SetupCode>> {
+  if (!(await withinRateLimit("device.reset_login", 20)))
+    return TOO_MANY_ATTEMPTS;
   const actor = await getActionStaff(["admin"]);
   if (!actor) return NOT_ALLOWED;
   const device = await loadDevice(id);
@@ -162,4 +168,20 @@ export async function resetDeviceLogin(
   const code = await createSetupCode(admin, device, actor.id);
   if (!code.ok) return code;
   return { ok: true, data: { code: code.code, expiresAt: code.expiresAt } };
+}
+
+/** Switches a device into or out of training mode (its branch's training twin). */
+export async function setDeviceTraining(
+  id: string,
+  on: boolean,
+): Promise<ActionResult> {
+  if (!(await getActionStaff(["admin"]))) return NOT_ALLOWED;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_device_training", {
+    p_device_id: id,
+    p_on: on,
+  });
+  if (error) return { ok: false, error: dbErrorMessage(error) };
+  refresh();
+  return { ok: true };
 }

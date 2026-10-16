@@ -115,6 +115,7 @@ select is(
     'send_to_kitchen',
     'set_availability',
     'set_branch_price',
+    'set_device_training',
     'set_purchase_order_status',
     'set_staff_login',
     'set_staff_pin',

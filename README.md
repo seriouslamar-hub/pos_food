@@ -196,6 +196,25 @@ The till prints through the browser (`lib/printing.ts`): receipts after a sale w
 2. Start Chrome with `--kiosk-printing` so it prints straight away without the print dialog.
 3. Cash drawers plug into the receipt printer. A web page can't send the "open drawer" command, so turn on the printer driver's option to open the drawer when printing. A QZ Tray driver (raw ESC/POS, can open the drawer itself) is stubbed in `lib/printing.ts` for later.
 
+## Launch readiness (Phase 14)
+
+- **Security:** `supabase test db` includes a review of every table (`018_security_review`):
+  - managers and tills of one branch see none of another's rows and can't change them, directly or through RPCs
+  - tables can be written directly only where a policy allows it (money tables change only through RPCs)
+  - nobody can `TRUNCATE`
+
+  New tables start with no write privileges (`20261016180000_hardening.sql`). Creating logins, devices and setup codes is rate limited.
+
+- **Training mode:** on a device's admin page. The device sells into its branch's training twin (staff use their own PINs, receipts say TRAINING), so practice never reaches the real branch's reports, cash, stock, points or coupon limits.
+- **Monitoring:**
+  - `/api/health` shows whether the app can reach Supabase, and `.github/workflows/uptime.yml` checks it every 15 minutes.
+  - Server and browser errors go to the Vercel logs as JSON lines, and to `ERROR_WEBHOOK_URL` if set.
+- **Docs:**
+  - `docs/user-guide/` (cashier, manager, admin)
+  - `docs/hardware.md`
+  - `docs/operations.md`: backups, restore test, monitoring, security and the go-live checklist
+- `tests/e2e/full-day.spec.ts` rehearses a whole trading day: open the day, two shifts, meals with discounts, a split payment, a void and a refund with a manager's PIN, sales offline, blind counts, reconciliation and the Z report.
+
 ## End-to-end tests
 
 ```bash

@@ -210,6 +210,7 @@ export type Database = {
           receipt_footer: string | null
           receipt_header: string | null
           timezone: string
+          training_for: string | null
           updated_at: string
         }
         Insert: {
@@ -224,6 +225,7 @@ export type Database = {
           receipt_footer?: string | null
           receipt_header?: string | null
           timezone: string
+          training_for?: string | null
           updated_at?: string
         }
         Update: {
@@ -238,9 +240,18 @@ export type Database = {
           receipt_footer?: string | null
           receipt_header?: string | null
           timezone?: string
+          training_for?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "branches_training_for_fkey"
+            columns: ["training_for"]
+            isOneToOne: true
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       business_days: {
         Row: {
@@ -650,6 +661,7 @@ export type Database = {
           branch_id: string
           code: string
           created_at: string
+          home_branch_id: string | null
           id: string
           is_active: boolean
           last_seen_at: string | null
@@ -665,6 +677,7 @@ export type Database = {
           branch_id: string
           code: string
           created_at?: string
+          home_branch_id?: string | null
           id?: string
           is_active?: boolean
           last_seen_at?: string | null
@@ -680,6 +693,7 @@ export type Database = {
           branch_id?: string
           code?: string
           created_at?: string
+          home_branch_id?: string | null
           id?: string
           is_active?: boolean
           last_seen_at?: string | null
@@ -694,6 +708,13 @@ export type Database = {
           {
             foreignKeyName: "devices_branch_id_fkey"
             columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devices_home_branch_id_fkey"
+            columns: ["home_branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
@@ -1947,6 +1968,24 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          hits: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          hits?: number
+          key: string
+          window_start: string
+        }
+        Update: {
+          hits?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       recipes: {
         Row: {
           created_at: string
@@ -2638,6 +2677,7 @@ export type Database = {
           branch_id: string
           code: string
           created_at: string
+          home_branch_id: string | null
           id: string
           is_active: boolean
           last_seen_at: string | null
@@ -2716,6 +2756,10 @@ export type Database = {
         Args: { p_branch_id: string; p_pin: string }
         Returns: string
       }
+      free_offline_number: {
+        Args: { p_number: string; p_session_id: string }
+        Returns: string
+      }
       get_day_report: { Args: { p_day_id: string }; Returns: Json }
       get_menu: { Args: { p_branch_id: string }; Returns: Json }
       get_menu_core: { Args: { p_branch_id: string }; Returns: Json }
@@ -2729,6 +2773,7 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_device: { Args: never; Returns: boolean }
       is_manager: { Args: never; Returns: boolean }
+      is_training_branch: { Args: { p_branch_id: string }; Returns: boolean }
       line_taxes: {
         Args: { p_gross: number; p_tax_category: string }
         Returns: Json
@@ -2823,6 +2868,10 @@ export type Database = {
           p_branch_id: string
           p_local: string
         }
+        Returns: boolean
+      }
+      rate_limit_hit: {
+        Args: { p_key: string; p_max: number; p_window_seconds: number }
         Returns: boolean
       }
       recall_items: { Args: { p_item_ids: string[] }; Returns: undefined }
@@ -2933,6 +2982,7 @@ export type Database = {
           branch_id: string
           code: string
           created_at: string
+          home_branch_id: string | null
           id: string
           is_active: boolean
           last_seen_at: string | null
@@ -3055,6 +3105,10 @@ export type Database = {
         Args: { p_branch_id: string; p_menu_item_id: string; p_price: number }
         Returns: undefined
       }
+      set_device_training: {
+        Args: { p_device_id: string; p_on: boolean }
+        Returns: Json
+      }
       set_purchase_order_status: {
         Args: { p_order_id: string; p_status: string }
         Returns: undefined
@@ -3075,6 +3129,7 @@ export type Database = {
         Returns: Json
       }
       shift_summary: { Args: { p_shift_id: string }; Returns: Json }
+      staff_branch_for: { Args: { p_branch_id: string }; Returns: string }
       staff_has_permission: {
         Args: { p_permission: string; p_staff_id: string }
         Returns: boolean

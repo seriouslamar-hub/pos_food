@@ -125,6 +125,8 @@ export type OrderSummary = {
   change_given: number;
   refunds: OrderRefund[];
   refunded_total: number;
+  /** Sold in training mode: not a real sale. */
+  training?: boolean;
   promotion_total?: number;
   coupon_code?: string | null;
   promotions?: { id: string; name: string; amount: number }[];
