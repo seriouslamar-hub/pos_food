@@ -72,6 +72,8 @@ export default defineConfig({
       NEXT_PUBLIC_SUPABASE_URL: supabase.url,
       NEXT_PUBLIC_SUPABASE_ANON_KEY: supabase.anonKey,
       SUPABASE_SERVICE_ROLE_KEY: supabase.serviceKey,
+      // The pretend payment provider (refused unless the database is local).
+      PAYMENTS_PROVIDER: "test",
     },
   },
 });

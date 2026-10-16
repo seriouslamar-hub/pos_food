@@ -22,7 +22,10 @@ export function isBackOfficePath(path: string): boolean {
 /** Screens that need a device login. */
 export function isDeviceScreenPath(path: string): boolean {
   return (
-    isUnder(path, "/till") || isUnder(path, "/kds") || isUnder(path, "/pickup")
+    isUnder(path, "/till") ||
+    isUnder(path, "/kds") ||
+    isUnder(path, "/pickup") ||
+    isUnder(path, "/kiosk")
   );
 }
 
@@ -46,7 +49,7 @@ export function deviceHome(type: DeviceKind): string {
     case "pickup":
       return "/pickup";
     case "kiosk":
-      return "/device/setup";
+      return "/kiosk";
   }
 }
 

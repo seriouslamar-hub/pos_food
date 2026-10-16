@@ -20,6 +20,7 @@ type UnpaidOrder = Pick<
   | "id"
   | "order_number"
   | "order_type"
+  | "channel"
   | "total"
   | "created_at"
   | "sent_to_kitchen_at"
@@ -55,7 +56,7 @@ export function UnpaidOrders({
     const { data, error: loadError } = await supabase
       .from("orders")
       .select(
-        "id, order_number, order_type, total, created_at, sent_to_kitchen_at",
+        "id, order_number, order_type, channel, total, created_at, sent_to_kitchen_at",
       )
       .eq("branch_id", branchId)
       .is("paid_at", null)
@@ -119,6 +120,11 @@ export function UnpaidOrders({
                   <span>
                     <strong className="text-lg">Order {o.order_number}</strong>
                     <span className="block text-sm text-muted-foreground">
+                      {o.channel === "kiosk"
+                        ? "Kiosk · "
+                        : o.channel === "online"
+                          ? "Online · "
+                          : ""}
                       {ORDER_TYPE_LABELS[o.order_type]} ·{" "}
                       {o.sent_to_kitchen_at ? "in the kitchen" : "not sent"} ·{" "}
                       {formatInZone(o.created_at, timezone, {

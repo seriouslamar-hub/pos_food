@@ -36,6 +36,15 @@
 
 **Restore test, 16 Oct 2026:** production dump restored into a freshly migrated local database in under a second. Logins (with password hashes), staff, branches, settings, permissions and all 73 audit entries matched production exactly.
 
+## Online ordering setup
+
+1. **Payments:** create a Paystack account (or another provider added to `lib/payments/online.ts`). In Vercel set `PAYMENTS_PROVIDER=paystack` and `PAYSTACK_SECRET_KEY` (sensitive), then redeploy. In Paystack → Settings → API keys & webhooks, set the webhook URL to `https://pos-food-system.vercel.app/api/payments/webhook/paystack`.
+2. **Phone codes:** in Supabase → Authentication → Providers → **Phone**, turn it on with an SMS provider (Twilio, MessageBird, Vonage or Textlocal) and its keys. Keep "Allow new users to sign up" **off** (Authentication → Sign In / Providers); the app creates customers' phone logins itself.
+3. **Switch it on:** Admin → Settings: **Online ordering** on, the earliest pickup time, and whether orders can be paid at the counter.
+4. **Test it:** order something small, pay, and check it reaches the kitchen screen and the till's Unpaid orders behave as expected.
+
+Auth settings set on 16 Oct 2026: self sign-up **off**, site URL `https://pos-food-system.vercel.app`, minimum password length 8.
+
 ## Security checklist
 
 - **Service role key:** only in Vercel (server-only) and never in code. `lib/supabase/admin.ts` imports `server-only`, so browser code can't use it.

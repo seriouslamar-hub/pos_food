@@ -18,7 +18,7 @@ Sign in to the back office at `/login` with your email and password. At a till y
 
   Every approval is recorded with your name. An approval works once, within 2 minutes.
 
-- **Availability:** mark items out of stock; every till updates within seconds.
+- **Availability:** mark items out of stock; every till, the kiosk and the online menu update. When the kitchen is swamped, **Pause online orders** there (and resume later).
 - **Reports → Today:** sales so far against the same day last week, and live orders.
 
 **Close the day:**

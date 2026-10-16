@@ -46,9 +46,7 @@ export function DeviceSetupForm({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const branchDevices = devices.filter(
-    (d) => d.branchId === branchId && d.type !== "kiosk",
-  );
+  const branchDevices = devices.filter((d) => d.branchId === branchId);
   const selected = branchDevices.find((d) => d.id === deviceId) ?? null;
 
   function setUp() {

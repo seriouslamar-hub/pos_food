@@ -28,13 +28,15 @@ export type KitchenOrder = {
   ready_at: string | null;
   collected_at: string | null;
   paid_at: string | null;
+  /** Online orders: when the customer will collect. */
+  pickup_at?: string | null;
   notes: string | null;
   order_items: KitchenItem[];
 };
 
 /** What the kitchen screen query selects. */
 export const KITCHEN_ORDER_COLUMNS =
-  "id, order_number, order_type, channel, status, sent_to_kitchen_at, ready_at, collected_at, paid_at, notes, " +
+  "id, order_number, order_type, channel, status, sent_to_kitchen_at, ready_at, collected_at, paid_at, pickup_at, notes, " +
   "order_items(id, parent_item_id, name_snapshot, short_name_snapshot, combo_slot_name, quantity, modifiers, notes, status, kds_station_id, sort_order, bumped_at)";
 
 export type TicketLine = {

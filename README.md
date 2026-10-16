@@ -196,6 +196,24 @@ The till prints through the browser (`lib/printing.ts`): receipts after a sale w
 2. Start Chrome with `--kiosk-printing` so it prints straight away without the print dialog.
 3. Cash drawers plug into the receipt printer. A web page can't send the "open drawer" command, so turn on the printer driver's option to open the drawer when printing. A QZ Tray driver (raw ESC/POS, can open the drawer itself) is stubbed in `lib/printing.ts` for later.
 
+## Kiosk and online ordering (Phase 15)
+
+- **Kiosk** (`/kiosk`, a device of type Kiosk, best on a portrait touch screen):
+  - big photos, meal builder, "Make it a meal?" offers, larger text, and it starts over after `kiosk.idle_seconds` without a tap
+  - customers pay at the counter: the order waits in the till's **Unpaid orders** (marked Kiosk) and goes to the kitchen when paid
+  - or they pay by card when online payment is set up
+- **Online ordering** (`/order`, public; switch on with `online.enabled`):
+  - customers choose a branch, build their order (the public menu shows only what's on sale), pick a pickup time (from `online.prep_minutes`) and verify their mobile number with a texted code
+  - they pay online, or at the counter where `online.pay_at_counter` allows
+  - `/order/track/<id>` follows the order until it's collected
+  - managers can **pause** online orders from **Availability**
+- **Unpaid orders never reach the kitchen.** Kiosk and online orders go to the kitchen only when they're paid: at the till, or when the payment provider's signed webhook confirms the payment for the exact amount (`confirm_online_payment`, server only, safe to repeat).
+- **Payments:**
+  - `PAYMENTS_PROVIDER=paystack` with `PAYSTACK_SECRET_KEY` (cards and mobile money) in Vercel; set the Paystack webhook to `https://<app>/api/payments/webhook/paystack`
+  - `PAYMENTS_PROVIDER=test` gives a pretend checkout (local stack only)
+  - online payments count on the order's business day in the Z report and reports
+- **Phone codes:** Supabase sends them through its SMS provider. Turn on **Authentication → Providers → Phone** with Twilio, MessageBird, Vonage or Textlocal. Sign-ups stay off: the app's server creates a customer's phone login just before texting the code (`/api/online/phone`, rate limited). Locally, `+233240000001` and `+233240000002` sign in with `123456`.
+
 ## Launch readiness (Phase 14)
 
 - **Security:** `supabase test db` includes a review of every table (`018_security_review`):

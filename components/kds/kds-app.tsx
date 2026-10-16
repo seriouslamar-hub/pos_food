@@ -294,6 +294,9 @@ function TicketCard({
           {order.channel !== "counter"
             ? ` · ${CHANNEL_LABELS[order.channel]}`
             : ""}
+          {order.pickup_at
+            ? ` · pickup ${new Date(order.pickup_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`
+            : ""}
           <span className="block text-xl font-bold tabular-nums">
             {formatElapsed(age.seconds)}
           </span>

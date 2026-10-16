@@ -1040,6 +1040,60 @@ export type Database = {
           },
         ]
       }
+      online_payments: {
+        Row: {
+          amount: number
+          branch_id: string
+          confirmed_at: string | null
+          created_at: string
+          currency_code: string
+          id: string
+          order_id: string
+          provider: string
+          reference: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          branch_id: string
+          confirmed_at?: string | null
+          created_at?: string
+          currency_code: string
+          id?: string
+          order_id: string
+          provider: string
+          reference: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          branch_id?: string
+          confirmed_at?: string | null
+          created_at?: string
+          currency_code?: string
+          id?: string
+          order_id?: string
+          provider?: string
+          reference?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_payments_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_counters: {
         Row: {
           branch_id: string
@@ -1266,9 +1320,12 @@ export type Database = {
           loyalty_points_redeemed: number
           notes: string | null
           offline_difference: number | null
+          online_user_id: string | null
           order_number: string
           order_type: Database["public"]["Enums"]["order_type"]
           paid_at: string | null
+          pay_at_counter: boolean
+          pickup_at: string | null
           pos_session_id: string | null
           promotion_total: number
           ready_at: string | null
@@ -1303,9 +1360,12 @@ export type Database = {
           loyalty_points_redeemed?: number
           notes?: string | null
           offline_difference?: number | null
+          online_user_id?: string | null
           order_number: string
           order_type?: Database["public"]["Enums"]["order_type"]
           paid_at?: string | null
+          pay_at_counter?: boolean
+          pickup_at?: string | null
           pos_session_id?: string | null
           promotion_total?: number
           ready_at?: string | null
@@ -1340,9 +1400,12 @@ export type Database = {
           loyalty_points_redeemed?: number
           notes?: string | null
           offline_difference?: number | null
+          online_user_id?: string | null
           order_number?: string
           order_type?: Database["public"]["Enums"]["order_type"]
           paid_at?: string | null
+          pay_at_counter?: boolean
+          pickup_at?: string | null
           pos_session_id?: string | null
           promotion_total?: number
           ready_at?: string | null
@@ -1518,6 +1581,7 @@ export type Database = {
           is_offline: boolean
           method: Database["public"]["Enums"]["payment_method_type"]
           method_name: string
+          online_reference: string | null
           order_id: string
           payment_method_id: string
           pos_session_id: string | null
@@ -1538,6 +1602,7 @@ export type Database = {
           is_offline?: boolean
           method: Database["public"]["Enums"]["payment_method_type"]
           method_name: string
+          online_reference?: string | null
           order_id: string
           payment_method_id: string
           pos_session_id?: string | null
@@ -1558,6 +1623,7 @@ export type Database = {
           is_offline?: boolean
           method?: Database["public"]["Enums"]["payment_method_type"]
           method_name?: string
+          online_reference?: string | null
           order_id?: string
           payment_method_id?: string
           pos_session_id?: string | null
@@ -2660,6 +2726,10 @@ export type Database = {
         }
         Returns: Json
       }
+      confirm_online_payment: {
+        Args: { p_amount: number; p_currency: string; p_reference: string }
+        Returns: Json
+      }
       consume_override: {
         Args: {
           p_branch_id: string
@@ -2725,6 +2795,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["staff_role"]
       }
+      customer_order_payload: { Args: { p_order: Json }; Returns: Json }
       customer_view: { Args: { p_customer_id: string }; Returns: Json }
       day_breakdown: { Args: { p_day_id: string }; Returns: Json }
       day_control_actor: {
@@ -2764,7 +2835,9 @@ export type Database = {
       get_menu: { Args: { p_branch_id: string }; Returns: Json }
       get_menu_core: { Args: { p_branch_id: string }; Returns: Json }
       get_offline_bundle: { Args: never; Returns: Json }
+      get_online_order: { Args: { p_order_id: string }; Returns: Json }
       get_order: { Args: { p_order_id: string }; Returns: Json }
+      get_public_menu: { Args: { p_branch_id: string }; Returns: Json }
       has_permission: { Args: { p_permission: string }; Returns: boolean }
       inventory_report: {
         Args: { p_branch_id: string; p_from: string; p_to: string }
@@ -2778,6 +2851,7 @@ export type Database = {
         Args: { p_gross: number; p_tax_category: string }
         Returns: Json
       }
+      list_online_branches: { Args: never; Returns: Json }
       list_open_shifts: { Args: { p_session_id: string }; Returns: Json }
       load_sample_inventory: { Args: never; Returns: undefined }
       load_sample_menu: { Args: never; Returns: undefined }
@@ -2792,6 +2866,7 @@ export type Database = {
         Args: { p_order_id: string; p_session_id: string }
         Returns: Json
       }
+      menu_document: { Args: { p_branch_id: string }; Returns: Json }
       move_stock: {
         Args: {
           p_branch_id: string
@@ -2807,6 +2882,8 @@ export type Database = {
         Returns: undefined
       }
       normalize_phone: { Args: { p_phone: string }; Returns: string }
+      online_order_view: { Args: { p_order_id: string }; Returns: Json }
+      online_settings: { Args: { p_branch_id: string }; Returns: Json }
       open_business_day: {
         Args: {
           p_branch_id?: string
@@ -2851,6 +2928,10 @@ export type Database = {
       order_summary: { Args: { p_order_id: string }; Returns: Json }
       order_summary_core: { Args: { p_order_id: string }; Returns: Json }
       pin_lockout_seconds: { Args: { p_device_id: string }; Returns: number }
+      place_online_order: {
+        Args: { p_branch_id: string; p_order: Json }
+        Returns: Json
+      }
       promotion_line_discounts: {
         Args: {
           p: Database["public"]["Tables"]["promotions"]["Row"]
@@ -3109,6 +3190,10 @@ export type Database = {
         Args: { p_device_id: string; p_on: boolean }
         Returns: Json
       }
+      set_online_ordering: {
+        Args: { p_branch_id: string; p_paused: boolean }
+        Returns: Json
+      }
       set_purchase_order_status: {
         Args: { p_order_id: string; p_status: string }
         Returns: undefined
@@ -3139,6 +3224,10 @@ export type Database = {
         Args: { p_session_id: string; p_staff_id: string; p_started_at: string }
         Returns: Json
       }
+      start_online_payment: {
+        Args: { p_order_id: string; p_provider: string; p_reference: string }
+        Returns: Json
+      }
       start_pos_session: { Args: { p_pin: string }; Returns: Json }
       stock_lines: {
         Args: { p_lines: Json }
@@ -3150,6 +3239,16 @@ export type Database = {
           unit_cost: number
         }[]
       }
+      submit_channel_order_core: {
+        Args: {
+          p_branch_id: string
+          p_channel: Database["public"]["Enums"]["order_channel"]
+          p_device_id: string
+          p_order: Json
+        }
+        Returns: Json
+      }
+      submit_kiosk_order: { Args: { p_order: Json }; Returns: Json }
       submit_order: {
         Args: { p_order: Json; p_session_id: string }
         Returns: Json

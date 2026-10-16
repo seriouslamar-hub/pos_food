@@ -172,6 +172,8 @@ enable_refresh_token_rotation = true
 # Requires enable_refresh_token_rotation = true.
 refresh_token_reuse_interval = 10
 # Allow/disallow new user signups to your project.
+# Off: nobody signs up on their own. Staff logins are made by admins, and
+# online customers' phone logins by the app's server (/api/online/phone).
 enable_signup = false
 # Allow/disallow anonymous sign-ins to your project.
 enable_anonymous_sign_ins = false
@@ -203,9 +205,10 @@ anonymous_users = 30
 # Number of sessions that can be refreshed in a 5 minute interval per IP address.
 token_refresh = 150
 # Number of sign up and sign-in requests that can be made in a 5 minute interval per IP address (excludes anonymous users).
-sign_in_sign_ups = 30
+# Local only: raised so the end-to-end suite (many sign-ins) isn't throttled.
+sign_in_sign_ups = 500
 # Number of OTP / Magic link verifications that can be made in a 5 minute interval per IP address.
-token_verifications = 30
+token_verifications = 300
 # Number of Web3 logins that can be made in a 5 minute interval per IP address.
 web3 = 30
 
@@ -217,7 +220,9 @@ web3 = 30
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
-enable_signup = false
+# On here means email sign-in works; sign-ups stay off for everyone through
+# [auth] enable_signup = false.
+enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
@@ -255,7 +260,8 @@ otp_expiry = 3600
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
-enable_signup = false
+# On: phone logins (online customers verify their number with a code).
+enable_signup = true
 # If enabled, users need to confirm their phone number before signing in.
 enable_confirmations = false
 # Template for sending OTP to users
@@ -264,8 +270,10 @@ template = "Your code is {{ .Code }}"
 max_frequency = "5s"
 
 # Use pre-defined map of phone number to OTP for testing.
-# [auth.sms.test_otp]
-# 4152127777 = "123456"
+# Local only: the online ordering tests sign in with these.
+[auth.sms.test_otp]
+233240000001 = "123456"
+233240000002 = "123456"
 
 # Configure logged in session timeouts.
 # [auth.sessions]
@@ -286,11 +294,14 @@ max_frequency = "5s"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
 [auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
-# DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
-auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+# Local only: switched on with dummy values so the test numbers above can
+# sign in (they never send a message). Production uses a real provider set
+# up in the Supabase dashboard.
+enabled = true
+account_sid = "ACLOCALTESTONLY"
+message_service_sid = "MGLOCALTESTONLY"
+# DO NOT commit a real Twilio auth token to git.
+auth_token = "local-test-only"
 
 # Multi-factor-authentication is available to Supabase Pro plan.
 [auth.mfa]

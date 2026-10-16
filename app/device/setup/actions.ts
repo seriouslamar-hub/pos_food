@@ -53,10 +53,6 @@ export async function registerDevice(
       error: "That device isn't available. Refresh the page and choose again.",
     };
   }
-  if (device.type === "kiosk") {
-    return { ok: false, error: "Kiosk screens arrive in a later phase." };
-  }
-
   const admin = createAdminClient();
   const login = await ensureDeviceLogin(admin, device);
   if (!login.ok) return login;
@@ -104,7 +100,7 @@ export async function redeemSetupCode(
     .select("id, type, branch_id, auth_user_id, is_active")
     .eq("id", taken.deviceId)
     .maybeSingle();
-  if (!device || !device.is_active || device.type === "kiosk") {
+  if (!device || !device.is_active) {
     return {
       ok: false,
       error: "That device isn't active. Ask an admin to check it.",
