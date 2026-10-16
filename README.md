@@ -167,6 +167,13 @@ A till keeps selling when the internet drops, and sends everything once the conn
 - A meal is ready when all its parts are; an order is ready when nothing is left to make. **Pickup board** (`/pickup`): order numbers being made and ready, ready ones for `pickup.ready_minutes` or until collected, with a chime (`pickup.chime`).
 - On the till, **Ready (n)** lists orders waiting at the counter and those still being made; tap **Collected** when the customer has their food. Orders keep `sent_to_kitchen_at`, `ready_at` and `collected_at` for speed-of-service reports.
 
+### Inventory
+
+- **Setup (admins):** **Ingredients** (unit, category, cost per unit, reorder level, supplier), **Suppliers**, and **Recipes**: what each menu item and each modifier uses (e.g. _Large fries_ adds potato). A combo's own recipe holds its packaging; the items chosen in its slots bring their own recipes. **Load sample inventory** fills an empty list for the sample menu.
+- **Sales take stock out** automatically when an order is paid (or sent to the kitchen unpaid and paid later): the recipe of every item, chosen modifier and combo choice. This happens once per order, however often a payment is retried. A refund can put items back in stock when they weren't made or are sealed (**Put the items back in stock**); voided lines never took stock.
+- **Stock (managers for their branch, admins for any):** stock on hand and its value at cost, with ingredients below their reorder level highlighted and listed on the manager home page. **Record waste** with a reason, **Transfer stock** to another branch, **Purchase orders** (draft, optionally suggested from the last 7 or 14 days of use; mark as sent; receive a delivery where quantities and prices can differ, and the price paid becomes the ingredient's cost), and **Counts** (everything or one category; the difference is applied when a manager approves the count).
+- **Reports:** stock value, theoretical usage (what the recipes of what was sold used) against actual usage (plus waste and missing stock, less returns), and waste by reason.
+
 ### Receipts, kitchen tickets and the cash drawer
 
 The till prints through the browser (`lib/printing.ts`): receipts after a sale when `receipt.auto_print` is on (or with **Print receipt**), **Reprint last receipt** (marked COPY), and kitchen tickets when `print.kitchen_tickets` is on, for kitchens without a screen. To set up a till's printer:

@@ -76,6 +76,31 @@ async function AdminHome() {
           href: "/admin/menu",
         },
         {
+          title: "Business day",
+          description: "Open and close each branch's day, and Z reports.",
+          phase: "Phase 7",
+          href: "/admin/day",
+        },
+        {
+          title: "Orders and exceptions",
+          description: "Find any order; voids, refunds and discounts.",
+          phase: "Phase 8",
+          href: "/admin/orders",
+        },
+        {
+          title: "Ingredients and recipes",
+          description: "What each item uses, suppliers and costs.",
+          phase: "Phase 11",
+          href: "/admin/ingredients",
+        },
+        {
+          title: "Stock",
+          description:
+            "Stock on hand, deliveries, counts and waste per branch.",
+          phase: "Phase 11",
+          href: "/admin/stock",
+        },
+        {
           title: "Reports",
           description: "Sales, tax and performance across every branch.",
           phase: "Phase 12",

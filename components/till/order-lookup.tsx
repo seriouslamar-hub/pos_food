@@ -598,6 +598,7 @@ function RefundDialog({
   );
   const [reference, setReference] = useState("");
   const [reason, setReason] = useState("");
+  const [returnToStock, setReturnToStock] = useState(false);
   const [approvalOpen, setApprovalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -636,6 +637,7 @@ function RefundDialog({
         payment_method_id: methodId,
         reference: reference.trim() || null,
         reason: reason.trim(),
+        return_to_stock: returnToStock,
         override_id: overrideId ?? null,
         client_created_at: new Date().toISOString(),
       },
@@ -765,6 +767,13 @@ function RefundDialog({
             value={reason}
             onChange={setReason}
           />
+          <label className="flex min-h-12 items-center gap-3 rounded-xl border px-3 text-base">
+            <Checkbox
+              checked={returnToStock}
+              onCheckedChange={(checked) => setReturnToStock(checked === true)}
+            />
+            Put the items back in stock (not made, or sealed)
+          </label>
           {error ? (
             <Alert variant="destructive" aria-live="polite">
               <AlertDescription className="text-base">{error}</AlertDescription>

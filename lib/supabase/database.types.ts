@@ -161,6 +161,42 @@ export type Database = {
           },
         ]
       }
+      branch_stock: {
+        Row: {
+          branch_id: string
+          ingredient_id: string
+          quantity_on_hand: number
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          ingredient_id: string
+          quantity_on_hand?: number
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          ingredient_id?: string
+          quantity_on_hand?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branch_stock_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "branch_stock_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branches: {
         Row: {
           address: string | null
@@ -550,6 +586,53 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingredients: {
+        Row: {
+          category: string | null
+          cost_per_unit: number
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          reorder_level: number
+          supplier_id: string | null
+          unit: Database["public"]["Enums"]["stock_unit"]
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          cost_per_unit?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          reorder_level?: number
+          supplier_id?: string | null
+          unit: Database["public"]["Enums"]["stock_unit"]
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          cost_per_unit?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          reorder_level?: number
+          supplier_id?: string | null
+          unit?: Database["public"]["Enums"]["stock_unit"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredients_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -990,6 +1073,7 @@ export type Database = {
           shift_id: string | null
           staff_id: string | null
           status: Database["public"]["Enums"]["order_status"]
+          stock_deducted_at: string | null
           subtotal: number
           tax_total: number
           total: number
@@ -1022,6 +1106,7 @@ export type Database = {
           shift_id?: string | null
           staff_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
+          stock_deducted_at?: string | null
           subtotal?: number
           tax_total?: number
           total?: number
@@ -1054,6 +1139,7 @@ export type Database = {
           shift_id?: string | null
           staff_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
+          stock_deducted_at?: string | null
           subtotal?: number
           tax_total?: number
           total?: number
@@ -1396,6 +1482,174 @@ export type Database = {
           },
         ]
       }
+      purchase_order_lines: {
+        Row: {
+          id: string
+          ingredient_id: string
+          purchase_order_id: string
+          quantity: number
+          received_quantity: number | null
+          received_unit_cost: number | null
+          unit_cost: number
+        }
+        Insert: {
+          id?: string
+          ingredient_id: string
+          purchase_order_id: string
+          quantity: number
+          received_quantity?: number | null
+          received_unit_cost?: number | null
+          unit_cost?: number
+        }
+        Update: {
+          id?: string
+          ingredient_id?: string
+          purchase_order_id?: string
+          quantity?: number
+          received_quantity?: number | null
+          received_unit_cost?: number | null
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_lines_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_lines_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          branch_id: string
+          created_at: string
+          created_by: string | null
+          expected_on: string | null
+          id: string
+          notes: string | null
+          received_at: string | null
+          received_by: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["purchase_order_status"]
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          created_by?: string | null
+          expected_on?: string | null
+          id: string
+          notes?: string | null
+          received_at?: string | null
+          received_by?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["purchase_order_status"]
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          created_by?: string | null
+          expected_on?: string | null
+          id?: string
+          notes?: string | null
+          received_at?: string | null
+          received_by?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["purchase_order_status"]
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_received_by_fkey"
+            columns: ["received_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipes: {
+        Row: {
+          created_at: string
+          id: string
+          ingredient_id: string
+          menu_item_id: string | null
+          modifier_id: string | null
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          menu_item_id?: string | null
+          modifier_id?: string | null
+          quantity: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          menu_item_id?: string | null
+          modifier_id?: string | null
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipes_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipes_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipes_modifier_id_fkey"
+            columns: ["modifier_id"]
+            isOneToOne: false
+            referencedRelation: "modifiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       refunds: {
         Row: {
           amount: number
@@ -1413,6 +1667,7 @@ export type Database = {
           pos_session_id: string | null
           reason: string
           reference: string | null
+          returned_to_stock: boolean
           shift_id: string
           staff_id: string
         }
@@ -1432,6 +1687,7 @@ export type Database = {
           pos_session_id?: string | null
           reason: string
           reference?: string | null
+          returned_to_stock?: boolean
           shift_id: string
           staff_id: string
         }
@@ -1451,6 +1707,7 @@ export type Database = {
           pos_session_id?: string | null
           reason?: string
           reference?: string | null
+          returned_to_stock?: boolean
           shift_id?: string
           staff_id?: string
         }
@@ -1735,6 +1992,200 @@ export type Database = {
           },
         ]
       }
+      stock_count_lines: {
+        Row: {
+          counted: number
+          expected: number
+          ingredient_id: string
+          stock_count_id: string
+          variance: number | null
+        }
+        Insert: {
+          counted: number
+          expected: number
+          ingredient_id: string
+          stock_count_id: string
+          variance?: number | null
+        }
+        Update: {
+          counted?: number
+          expected?: number
+          ingredient_id?: string
+          stock_count_id?: string
+          variance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_count_lines_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_count_lines_stock_count_id_fkey"
+            columns: ["stock_count_id"]
+            isOneToOne: false
+            referencedRelation: "stock_counts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_counts: {
+        Row: {
+          branch_id: string
+          category: string | null
+          counted_at: string
+          counted_by: string | null
+          id: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["stock_count_status"]
+        }
+        Insert: {
+          branch_id: string
+          category?: string | null
+          counted_at?: string
+          counted_by?: string | null
+          id: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["stock_count_status"]
+        }
+        Update: {
+          branch_id?: string
+          category?: string | null
+          counted_at?: string
+          counted_by?: string | null
+          id?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["stock_count_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_counts_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_counts_counted_by_fkey"
+            columns: ["counted_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_counts_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_movements: {
+        Row: {
+          branch_id: string
+          created_at: string
+          id: string
+          ingredient_id: string
+          quantity: number
+          reason: string | null
+          reference_id: string | null
+          reference_type: string | null
+          staff_id: string | null
+          type: Database["public"]["Enums"]["stock_movement_type"]
+          unit_cost: number
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          quantity: number
+          reason?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          staff_id?: string | null
+          type: Database["public"]["Enums"]["stock_movement_type"]
+          unit_cost?: number
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          quantity?: number
+          reason?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          staff_id?: string | null
+          type?: Database["public"]["Enums"]["stock_movement_type"]
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       taxes: {
         Row: {
           created_at: string
@@ -1881,6 +2332,7 @@ export type Database = {
         }[]
       }
       day_report: { Args: { p_day_id: string }; Returns: Json }
+      deduct_order_stock: { Args: { p_order_id: string }; Returns: undefined }
       device_heartbeat: { Args: { p_pending?: number }; Returns: undefined }
       discount_amount: {
         Args: { p_amount: number; p_discount: Json }
@@ -1896,6 +2348,10 @@ export type Database = {
       get_offline_bundle: { Args: never; Returns: Json }
       get_order: { Args: { p_order_id: string }; Returns: Json }
       has_permission: { Args: { p_permission: string }; Returns: boolean }
+      inventory_report: {
+        Args: { p_branch_id: string; p_from: string; p_to: string }
+        Returns: Json
+      }
       is_admin: { Args: never; Returns: boolean }
       is_device: { Args: never; Returns: boolean }
       is_manager: { Args: never; Returns: boolean }
@@ -1904,10 +2360,25 @@ export type Database = {
         Returns: Json
       }
       list_open_shifts: { Args: { p_session_id: string }; Returns: Json }
+      load_sample_inventory: { Args: never; Returns: undefined }
       load_sample_menu: { Args: never; Returns: undefined }
       mark_order_collected: {
         Args: { p_order_id: string; p_session_id: string }
         Returns: Json
+      }
+      move_stock: {
+        Args: {
+          p_branch_id: string
+          p_ingredient_id: string
+          p_quantity: number
+          p_reason?: string
+          p_reference_id: string
+          p_reference_type: string
+          p_staff_id?: string
+          p_type: Database["public"]["Enums"]["stock_movement_type"]
+          p_unit_cost?: number
+        }
+        Returns: undefined
       }
       open_business_day: {
         Args: {
@@ -1942,9 +2413,20 @@ export type Database = {
         }
         Returns: Json
       }
+      order_lines_usage: {
+        Args: { p_line_ids?: string[]; p_order_id: string }
+        Returns: {
+          ingredient_id: string
+          quantity: number
+        }[]
+      }
       order_summary: { Args: { p_order_id: string }; Returns: Json }
       pin_lockout_seconds: { Args: { p_device_id: string }; Returns: number }
       recall_items: { Args: { p_item_ids: string[] }; Returns: undefined }
+      receive_purchase_order: {
+        Args: { p_lines?: Json; p_order_id: string }
+        Returns: undefined
+      }
       record_cash_movement: {
         Args: { p_movement: Json; p_session_id: string }
         Returns: Json
@@ -1963,6 +2445,10 @@ export type Database = {
       record_payments: {
         Args: { p_order_id: string; p_payments: Json; p_session_id: string }
         Returns: Json
+      }
+      record_waste: {
+        Args: { p_branch_id: string; p_waste: Json }
+        Returns: undefined
       }
       refresh_kitchen_status: {
         Args: { p_order_ids: string[] }
@@ -2052,9 +2538,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      require_stock_manager: { Args: { p_branch_id: string }; Returns: string }
+      return_refund_stock: { Args: { p_refund_id: string }; Returns: undefined }
       review_shift: {
         Args: { p_note?: string; p_shift_id: string; p_status: string }
         Returns: Json
+      }
+      review_stock_count: {
+        Args: { p_approve: boolean; p_count_id: string; p_note?: string }
+        Returns: undefined
       }
       round_div: {
         Args: { p_denominator: number; p_numerator: number }
@@ -2063,6 +2555,10 @@ export type Database = {
       sales_summary: {
         Args: { p_day_id: string; p_shift_id: string }
         Returns: Json
+      }
+      save_purchase_order: {
+        Args: { p_branch_id: string; p_order: Json }
+        Returns: string
       }
       search_orders: {
         Args: {
@@ -2095,6 +2591,10 @@ export type Database = {
         Args: { p_branch_id: string; p_menu_item_id: string; p_price: number }
         Returns: undefined
       }
+      set_purchase_order_status: {
+        Args: { p_order_id: string; p_status: string }
+        Returns: undefined
+      }
       set_staff_login: {
         Args: { p_auth_user_id: string; p_staff_id: string }
         Returns: undefined
@@ -2121,11 +2621,33 @@ export type Database = {
         Returns: Json
       }
       start_pos_session: { Args: { p_pin: string }; Returns: Json }
+      stock_lines: {
+        Args: { p_lines: Json }
+        Returns: {
+          ingredient_id: string
+          line: Json
+          quantity: number
+          reason: string
+          unit_cost: number
+        }[]
+      }
       submit_order: {
         Args: { p_order: Json; p_session_id: string }
         Returns: Json
       }
+      submit_stock_count: {
+        Args: { p_branch_id: string; p_count: Json }
+        Returns: string
+      }
+      suggest_purchase: {
+        Args: { p_branch_id: string; p_days?: number }
+        Returns: Json
+      }
       till_state: { Args: { p_session_id: string }; Returns: Json }
+      transfer_stock: {
+        Args: { p_branch_id: string; p_transfer: Json }
+        Returns: undefined
+      }
       verify_override: {
         Args: {
           p_permission: string
@@ -2182,8 +2704,19 @@ export type Database = {
       order_type: "dine_in" | "takeaway" | "delivery"
       payment_method_type: "cash" | "card" | "mobile_money" | "other"
       payment_status: "captured" | "refunded"
+      purchase_order_status: "draft" | "sent" | "received" | "cancelled"
       shift_status: "open" | "pending_review" | "approved" | "flagged"
       staff_role: "admin" | "manager" | "cashier"
+      stock_count_status: "pending" | "approved" | "rejected"
+      stock_movement_type:
+        | "sale"
+        | "receive"
+        | "waste"
+        | "count_adjust"
+        | "transfer_in"
+        | "transfer_out"
+        | "refund_return"
+      stock_unit: "pc" | "g" | "kg" | "ml" | "l" | "pack"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2330,8 +2863,20 @@ export const Constants = {
       order_type: ["dine_in", "takeaway", "delivery"],
       payment_method_type: ["cash", "card", "mobile_money", "other"],
       payment_status: ["captured", "refunded"],
+      purchase_order_status: ["draft", "sent", "received", "cancelled"],
       shift_status: ["open", "pending_review", "approved", "flagged"],
       staff_role: ["admin", "manager", "cashier"],
+      stock_count_status: ["pending", "approved", "rejected"],
+      stock_movement_type: [
+        "sale",
+        "receive",
+        "waste",
+        "count_adjust",
+        "transfer_in",
+        "transfer_out",
+        "refund_return",
+      ],
+      stock_unit: ["pc", "g", "kg", "ml", "l", "pack"],
     },
   },
 } as const

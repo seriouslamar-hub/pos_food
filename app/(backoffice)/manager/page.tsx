@@ -4,6 +4,7 @@ import {
   BackOfficeHome,
   BackOfficeSkeleton,
 } from "@/components/back-office-home";
+import { LowStockAlert } from "@/components/inventory/low-stock-alert";
 import { requireStaff } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Manager" };
@@ -22,6 +23,14 @@ async function ManagerHome() {
     <BackOfficeHome
       heading={`Welcome, ${staff.fullName}`}
       intro="Your branch: the business day, shifts, cash, stock and reports."
+      alert={
+        staff.branchId ? (
+          <LowStockAlert
+            branchId={staff.branchId}
+            href="/manager/inventory/orders/new"
+          />
+        ) : null
+      }
       sections={[
         {
           title: "Cashiers",
@@ -53,6 +62,21 @@ async function ManagerHome() {
           description:
             "Open and close the day, reconcile cash and print Z reports.",
           phase: "Phase 7",
+          href: "/manager/day",
+        },
+        {
+          title: "Orders and exceptions",
+          description:
+            "Find an order; voids, refunds and discounts by cashier.",
+          phase: "Phase 8",
+          href: "/manager/orders",
+        },
+        {
+          title: "Stock",
+          description:
+            "Deliveries, waste, counts, transfers and low-stock alerts.",
+          phase: "Phase 11",
+          href: "/manager/inventory",
         },
         {
           title: "Reports",

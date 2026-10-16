@@ -105,4 +105,8 @@ values ('Sales tax', 1000, false, 'standard', 10);
 
 select set_config('request.jwt.claims', '{"sub": "a0000000-0000-4000-8000-000000000001", "role": "authenticated"}', false);
 select public.load_sample_menu();
+select public.load_sample_inventory();
+-- Some stock to start with: two weeks' worth at the reorder levels.
+insert into public.branch_stock (branch_id, ingredient_id, quantity_on_hand)
+select '10000000-0000-4000-8000-000000000001', id, reorder_level * 2 from public.ingredients;
 select set_config('request.jwt.claims', '', false);

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   Card,
   CardContent,
@@ -19,10 +20,13 @@ export function BackOfficeHome({
   heading,
   intro,
   sections,
+  alert,
 }: {
   heading: string;
   intro: string;
   sections: Section[];
+  /** Shown above the cards, e.g. low stock. */
+  alert?: ReactNode;
 }) {
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 sm:p-6">
@@ -30,6 +34,7 @@ export function BackOfficeHome({
         <h1 className="text-2xl font-semibold tracking-tight">{heading}</h1>
         <p className="text-muted-foreground">{intro}</p>
       </div>
+      {alert}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {sections.map((section) => {
           const card = (

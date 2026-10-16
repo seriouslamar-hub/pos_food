@@ -73,6 +73,16 @@ const ACTION_LABELS: Record<string, string> = {
   "order.price_override": "Price changed",
   "order.void": "Items voided",
   "order.refund": "Refund",
+  "order.offline_difference": "Offline price difference",
+  "stock.waste": "Waste recorded",
+  "stock.transfer": "Stock transferred",
+  "stock.count": "Stock counted",
+  "stock.count_approved": "Stock count approved",
+  "stock.count_rejected": "Stock count rejected",
+  "purchase_order.saved": "Purchase order saved",
+  "purchase_order.sent": "Purchase order sent",
+  "purchase_order.cancelled": "Purchase order cancelled",
+  "purchase_order.received": "Delivery received",
 };
 
 export const AUDIT_ENTITIES: { value: string; label: string }[] = [
@@ -88,6 +98,11 @@ export const AUDIT_ENTITIES: { value: string; label: string }[] = [
   { value: "modifiers", label: "Modifiers" },
   { value: "pos_sessions", label: "Till sign-ins" },
   { value: "override_approvals", label: "Manager approvals" },
+  { value: "ingredients", label: "Ingredients" },
+  { value: "recipes", label: "Recipes" },
+  { value: "suppliers", label: "Suppliers" },
+  { value: "purchase_orders", label: "Purchase orders" },
+  { value: "stock_counts", label: "Stock counts" },
 ];
 
 type Json =
