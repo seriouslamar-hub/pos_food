@@ -103,7 +103,8 @@ function paystack(secret: string): OnlineProvider {
           reference,
           amount,
           currency,
-          email: `${digits}@customers.pos.invalid`,
+          // Paystack refuses made-up domains like .invalid; this one is ours.
+          email: `${digits}@customers.${new URL(callbackUrl).hostname}`,
           callback_url: callbackUrl,
           channels: ["card", "mobile_money"],
           metadata: { phone: customerPhone },
