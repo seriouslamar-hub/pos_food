@@ -155,6 +155,27 @@ export const SETTINGS: SettingDefinition[] = [
     fallback: true,
   },
   {
+    key: "loyalty.enabled",
+    label: "Loyalty points",
+    help: "Customers earn points on paid orders and can spend them as a discount.",
+    kind: "boolean",
+    fallback: true,
+  },
+  {
+    key: "loyalty.earn_per",
+    label: "Spend for one point",
+    help: "E.g. 1.00: a point for every 1.00 paid (rounded down).",
+    kind: "money",
+    fallback: 100,
+  },
+  {
+    key: "loyalty.point_value",
+    label: "A point is worth",
+    help: "What one point takes off when a customer spends it.",
+    kind: "money",
+    fallback: 1,
+  },
+  {
     key: "pickup.ready_minutes",
     label: "Pickup board shows ready orders for (minutes)",
     help: "Or until the till marks them collected.",

@@ -1,6 +1,10 @@
 import { formatInZone } from "@/lib/datetime";
 import { formatAmount } from "@/lib/money";
-import { ORDER_TYPE_LABELS, type OrderSummary } from "@/lib/orders";
+import {
+  ORDER_TYPE_LABELS,
+  staffLineDiscount,
+  type OrderSummary,
+} from "@/lib/orders";
 import { bpsToPercentInput } from "@/lib/percent";
 import type { PaperWidth } from "@/lib/printing";
 
@@ -107,15 +111,13 @@ export function Receipt({
                   : ""}
               </p>
             ) : null}
-            {line.line_discount - line.order_discount_share > 0 ? (
+            {staffLineDiscount(line) > 0 ? (
               <div className="ticket-row ticket-indent">
                 <span>
                   Discount
                   {line.discount ? ` (${line.discount.reason})` : ""}
                 </span>
-                <span>
-                  −{money(line.line_discount - line.order_discount_share)}
-                </span>
+                <span>−{money(staffLineDiscount(line))}</span>
               </div>
             ) : null}
             {line.refunded_at ? (
@@ -137,6 +139,18 @@ export function Receipt({
               {order.discount ? ` (${order.discount.reason})` : ""}
             </dt>
             <dd>−{money(orderDiscount)}</dd>
+          </div>
+        ) : null}
+        {(order.promotions ?? []).map((p) => (
+          <div key={p.id} className="ticket-row">
+            <dt>{p.name}</dt>
+            <dd>−{money(p.amount)}</dd>
+          </div>
+        ))}
+        {order.loyalty?.discount ? (
+          <div className="ticket-row">
+            <dt>Points ({order.loyalty.points_redeemed})</dt>
+            <dd>−{money(order.loyalty.discount)}</dd>
           </div>
         ) : null}
         {order.taxes.map((t) => (
@@ -191,6 +205,16 @@ export function Receipt({
             </div>
           ))}
         </dl>
+      ) : null}
+
+      {order.customer ? (
+        <p className="ticket-center ticket-rule" data-testid="receipt-points">
+          {order.customer.name ?? "Rewards"}:{" "}
+          {order.loyalty?.points_earned
+            ? `${order.loyalty.points_earned} points earned. `
+            : ""}
+          Balance {order.customer.points_balance} points
+        </p>
       ) : null}
 
       {branch.receipt_footer ? (

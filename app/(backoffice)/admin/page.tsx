@@ -88,6 +88,12 @@ async function AdminHome() {
           href: "/admin/orders",
         },
         {
+          title: "Promotions",
+          description: "Deals, lunch specials and coupons, by time and branch.",
+          phase: "Phase 13",
+          href: "/admin/promotions",
+        },
+        {
           title: "Ingredients and recipes",
           description: "What each item uses, suppliers and costs.",
           phase: "Phase 11",

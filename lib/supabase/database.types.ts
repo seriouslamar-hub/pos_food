@@ -495,6 +495,47 @@ export type Database = {
           },
         ]
       }
+      customers: {
+        Row: {
+          consent_at: string
+          created_at: string
+          created_branch_id: string | null
+          id: string
+          name: string | null
+          phone: string
+          points_balance: number
+          updated_at: string
+        }
+        Insert: {
+          consent_at: string
+          created_at?: string
+          created_branch_id?: string | null
+          id: string
+          name?: string | null
+          phone: string
+          points_balance?: number
+          updated_at?: string
+        }
+        Update: {
+          consent_at?: string
+          created_at?: string
+          created_branch_id?: string | null
+          id?: string
+          name?: string | null
+          phone?: string
+          points_balance?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_created_branch_id_fkey"
+            columns: ["created_branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_sales_summary: {
         Row: {
           branch_id: string
@@ -766,6 +807,68 @@ export type Database = {
         }
         Relationships: []
       }
+      loyalty_transactions: {
+        Row: {
+          branch_id: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          order_id: string | null
+          points: number
+          refund_id: string | null
+          type: Database["public"]["Enums"]["loyalty_type"]
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          order_id?: string | null
+          points: number
+          refund_id?: string | null
+          type: Database["public"]["Enums"]["loyalty_type"]
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          order_id?: string | null
+          points?: number
+          refund_id?: string | null
+          type?: Database["public"]["Enums"]["loyalty_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_transactions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_transactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_transactions_refund_id_fkey"
+            columns: ["refund_id"]
+            isOneToOne: false
+            referencedRelation: "refunds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
         Row: {
           base_price: number
@@ -956,6 +1059,7 @@ export type Database = {
           line_subtotal: number
           line_tax: number
           line_total: number
+          loyalty_discount: number
           menu_item_id: string
           modifiers: Json
           name_snapshot: string
@@ -966,6 +1070,7 @@ export type Database = {
           price_approved_by: string | null
           price_override_from: number | null
           price_override_reason: string | null
+          promo_discount: number
           quantity: number
           refund_id: string | null
           refunded_at: string | null
@@ -991,6 +1096,7 @@ export type Database = {
           line_subtotal?: number
           line_tax?: number
           line_total?: number
+          loyalty_discount?: number
           menu_item_id: string
           modifiers?: Json
           name_snapshot: string
@@ -1001,6 +1107,7 @@ export type Database = {
           price_approved_by?: string | null
           price_override_from?: number | null
           price_override_reason?: string | null
+          promo_discount?: number
           quantity: number
           refund_id?: string | null
           refunded_at?: string | null
@@ -1026,6 +1133,7 @@ export type Database = {
           line_subtotal?: number
           line_tax?: number
           line_total?: number
+          loyalty_discount?: number
           menu_item_id?: string
           modifiers?: Json
           name_snapshot?: string
@@ -1036,6 +1144,7 @@ export type Database = {
           price_approved_by?: string | null
           price_override_from?: number | null
           price_override_reason?: string | null
+          promo_discount?: number
           quantity?: number
           refund_id?: string | null
           refunded_at?: string | null
@@ -1121,6 +1230,7 @@ export type Database = {
           channel: Database["public"]["Enums"]["order_channel"]
           client_created_at: string | null
           collected_at: string | null
+          coupon_code: string | null
           created_at: string
           customer_id: string | null
           customer_phone: string | null
@@ -1131,12 +1241,15 @@ export type Database = {
           discount_total: number
           id: string
           is_offline: boolean
+          loyalty_discount: number
+          loyalty_points_redeemed: number
           notes: string | null
           offline_difference: number | null
           order_number: string
           order_type: Database["public"]["Enums"]["order_type"]
           paid_at: string | null
           pos_session_id: string | null
+          promotion_total: number
           ready_at: string | null
           sent_to_kitchen_at: string | null
           shift_id: string | null
@@ -1154,6 +1267,7 @@ export type Database = {
           channel?: Database["public"]["Enums"]["order_channel"]
           client_created_at?: string | null
           collected_at?: string | null
+          coupon_code?: string | null
           created_at?: string
           customer_id?: string | null
           customer_phone?: string | null
@@ -1164,12 +1278,15 @@ export type Database = {
           discount_total?: number
           id: string
           is_offline?: boolean
+          loyalty_discount?: number
+          loyalty_points_redeemed?: number
           notes?: string | null
           offline_difference?: number | null
           order_number: string
           order_type?: Database["public"]["Enums"]["order_type"]
           paid_at?: string | null
           pos_session_id?: string | null
+          promotion_total?: number
           ready_at?: string | null
           sent_to_kitchen_at?: string | null
           shift_id?: string | null
@@ -1187,6 +1304,7 @@ export type Database = {
           channel?: Database["public"]["Enums"]["order_channel"]
           client_created_at?: string | null
           collected_at?: string | null
+          coupon_code?: string | null
           created_at?: string
           customer_id?: string | null
           customer_phone?: string | null
@@ -1197,12 +1315,15 @@ export type Database = {
           discount_total?: number
           id?: string
           is_offline?: boolean
+          loyalty_discount?: number
+          loyalty_points_redeemed?: number
           notes?: string | null
           offline_difference?: number | null
           order_number?: string
           order_type?: Database["public"]["Enums"]["order_type"]
           paid_at?: string | null
           pos_session_id?: string | null
+          promotion_total?: number
           ready_at?: string | null
           sent_to_kitchen_at?: string | null
           shift_id?: string | null
@@ -1220,6 +1341,13 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_customer_fk"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
             referencedColumns: ["id"]
           },
           {
@@ -1550,6 +1678,155 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      promotion_redemptions: {
+        Row: {
+          amount: number
+          branch_id: string
+          created_at: string
+          customer_id: string | null
+          id: string
+          order_id: string
+          promotion_id: string
+        }
+        Insert: {
+          amount: number
+          branch_id: string
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          order_id: string
+          promotion_id: string
+        }
+        Update: {
+          amount?: number
+          branch_id?: string
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          order_id?: string
+          promotion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_redemptions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_redemptions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_redemptions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_redemptions_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotions: {
+        Row: {
+          branch_ids: string[]
+          buy_quantity: number | null
+          category_ids: string[]
+          channels: string[]
+          coupon_code: string | null
+          created_at: string
+          days_of_week: number[]
+          description: string | null
+          end_date: string | null
+          end_time: string | null
+          get_discount_bps: number
+          get_quantity: number | null
+          id: string
+          is_active: boolean
+          item_ids: string[]
+          max_uses: number | null
+          max_uses_per_customer: number | null
+          min_spend: number
+          name: string
+          order_types: string[]
+          priority: number
+          stackable: boolean
+          start_date: string | null
+          start_time: string | null
+          type: Database["public"]["Enums"]["promotion_type"]
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          branch_ids?: string[]
+          buy_quantity?: number | null
+          category_ids?: string[]
+          channels?: string[]
+          coupon_code?: string | null
+          created_at?: string
+          days_of_week?: number[]
+          description?: string | null
+          end_date?: string | null
+          end_time?: string | null
+          get_discount_bps?: number
+          get_quantity?: number | null
+          id?: string
+          is_active?: boolean
+          item_ids?: string[]
+          max_uses?: number | null
+          max_uses_per_customer?: number | null
+          min_spend?: number
+          name: string
+          order_types?: string[]
+          priority?: number
+          stackable?: boolean
+          start_date?: string | null
+          start_time?: string | null
+          type: Database["public"]["Enums"]["promotion_type"]
+          updated_at?: string
+          value?: number
+        }
+        Update: {
+          branch_ids?: string[]
+          buy_quantity?: number | null
+          category_ids?: string[]
+          channels?: string[]
+          coupon_code?: string | null
+          created_at?: string
+          days_of_week?: number[]
+          description?: string | null
+          end_date?: string | null
+          end_time?: string | null
+          get_discount_bps?: number
+          get_quantity?: number | null
+          id?: string
+          is_active?: boolean
+          item_ids?: string[]
+          max_uses?: number | null
+          max_uses_per_customer?: number | null
+          min_spend?: number
+          name?: string
+          order_types?: string[]
+          priority?: number
+          stackable?: boolean
+          start_date?: string | null
+          start_time?: string | null
+          type?: Database["public"]["Enums"]["promotion_type"]
+          updated_at?: string
+          value?: number
+        }
+        Relationships: []
       }
       purchase_order_lines: {
         Row: {
@@ -2300,6 +2577,19 @@ export type Database = {
         Args: { p_amounts: number[]; p_discount: number }
         Returns: number[]
       }
+      apply_loyalty_redemption: {
+        Args: { p_order_id: string; p_points: number; p_strict: boolean }
+        Returns: undefined
+      }
+      apply_promotions: {
+        Args: {
+          p_at: string
+          p_coupon: string
+          p_order_id: string
+          p_strict: boolean
+        }
+        Returns: undefined
+      }
       branch_setting: {
         Args: { p_branch_id: string; p_key: string }
         Returns: Json
@@ -2307,6 +2597,10 @@ export type Database = {
       bump_items: { Args: { p_item_ids: string[] }; Returns: Json }
       business_day_summary: { Args: { p_day_id: string }; Returns: Json }
       can_access_branch: { Args: { p_branch_id: string }; Returns: boolean }
+      check_coupon: {
+        Args: { p_code: string; p_session_id: string }
+        Returns: Json
+      }
       check_report_dates: {
         Args: { p_from: string; p_to: string }
         Returns: undefined
@@ -2391,6 +2685,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["staff_role"]
       }
+      customer_view: { Args: { p_customer_id: string }; Returns: Json }
       day_breakdown: { Args: { p_day_id: string }; Returns: Json }
       day_control_actor: {
         Args: {
@@ -2413,12 +2708,17 @@ export type Database = {
         Returns: number
       }
       end_pos_session: { Args: { p_session_id: string }; Returns: undefined }
+      find_customer: {
+        Args: { p_phone: string; p_session_id: string }
+        Returns: Json
+      }
       find_staff_by_pin: {
         Args: { p_branch_id: string; p_pin: string }
         Returns: string
       }
       get_day_report: { Args: { p_day_id: string }; Returns: Json }
       get_menu: { Args: { p_branch_id: string }; Returns: Json }
+      get_menu_core: { Args: { p_branch_id: string }; Returns: Json }
       get_offline_bundle: { Args: never; Returns: Json }
       get_order: { Args: { p_order_id: string }; Returns: Json }
       has_permission: { Args: { p_permission: string }; Returns: boolean }
@@ -2436,6 +2736,13 @@ export type Database = {
       list_open_shifts: { Args: { p_session_id: string }; Returns: Json }
       load_sample_inventory: { Args: never; Returns: undefined }
       load_sample_menu: { Args: never; Returns: undefined }
+      loyalty_earn: { Args: { p_order_id: string }; Returns: undefined }
+      loyalty_on_refund: { Args: { p_refund_id: string }; Returns: undefined }
+      loyalty_return_redeemed: {
+        Args: { p_order_id: string }
+        Returns: undefined
+      }
+      loyalty_settings: { Args: { p_branch_id: string }; Returns: Json }
       mark_order_collected: {
         Args: { p_order_id: string; p_session_id: string }
         Returns: Json
@@ -2454,6 +2761,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      normalize_phone: { Args: { p_phone: string }; Returns: string }
       open_business_day: {
         Args: {
           p_branch_id?: string
@@ -2494,11 +2802,36 @@ export type Database = {
           quantity: number
         }[]
       }
+      order_promo_lines: { Args: { p_order_id: string }; Returns: Json }
       order_summary: { Args: { p_order_id: string }; Returns: Json }
+      order_summary_core: { Args: { p_order_id: string }; Returns: Json }
       pin_lockout_seconds: { Args: { p_device_id: string }; Returns: number }
+      promotion_line_discounts: {
+        Args: {
+          p: Database["public"]["Tables"]["promotions"]["Row"]
+          p_lines: Json
+        }
+        Returns: Json
+      }
+      promotion_public: {
+        Args: { p: Database["public"]["Tables"]["promotions"]["Row"] }
+        Returns: Json
+      }
+      promotion_runs: {
+        Args: {
+          p: Database["public"]["Tables"]["promotions"]["Row"]
+          p_branch_id: string
+          p_local: string
+        }
+        Returns: boolean
+      }
       recall_items: { Args: { p_item_ids: string[] }; Returns: undefined }
       receive_purchase_order: {
         Args: { p_lines?: Json; p_order_id: string }
+        Returns: undefined
+      }
+      recompute_order_totals: {
+        Args: { p_order_id: string }
         Returns: undefined
       }
       record_cash_movement: {
@@ -2579,6 +2912,10 @@ export type Database = {
           p_kind: string
           p_to: string
         }
+        Returns: Json
+      }
+      report_promotions: {
+        Args: { p_branch_id: string; p_from: string; p_to: string }
         Returns: Json
       }
       report_sales: {
@@ -2679,6 +3016,10 @@ export type Database = {
         Args: { p_day_id: string; p_shift_id: string }
         Returns: Json
       }
+      save_customer: {
+        Args: { p_customer: Json; p_session_id: string }
+        Returns: Json
+      }
       save_purchase_order: {
         Args: { p_branch_id: string; p_order: Json }
         Returns: string
@@ -2755,6 +3096,10 @@ export type Database = {
         }[]
       }
       submit_order: {
+        Args: { p_order: Json; p_session_id: string }
+        Returns: Json
+      }
+      submit_order_core: {
         Args: { p_order: Json; p_session_id: string }
         Returns: Json
       }
@@ -2844,6 +3189,12 @@ export type Database = {
       business_day_status: "open" | "closed"
       cash_movement_type: "drop" | "paid_in" | "paid_out" | "no_sale"
       device_type: "till" | "kds" | "pickup" | "kiosk"
+      loyalty_type:
+        | "earn"
+        | "redeem"
+        | "reverse_earn"
+        | "return_redeem"
+        | "adjust"
       menu_item_type: "item" | "combo"
       order_channel: "counter" | "kiosk" | "online" | "drive_thru"
       order_item_status: "pending" | "sent" | "ready" | "voided"
@@ -2859,6 +3210,11 @@ export type Database = {
       order_type: "dine_in" | "takeaway" | "delivery"
       payment_method_type: "cash" | "card" | "mobile_money" | "other"
       payment_status: "captured" | "refunded"
+      promotion_type:
+        | "percent_off"
+        | "amount_off"
+        | "fixed_price"
+        | "buy_x_get_y"
       purchase_order_status: "draft" | "sent" | "received" | "cancelled"
       shift_status: "open" | "pending_review" | "approved" | "flagged"
       staff_role: "admin" | "manager" | "cashier"
@@ -3002,6 +3358,13 @@ export const Constants = {
       business_day_status: ["open", "closed"],
       cash_movement_type: ["drop", "paid_in", "paid_out", "no_sale"],
       device_type: ["till", "kds", "pickup", "kiosk"],
+      loyalty_type: [
+        "earn",
+        "redeem",
+        "reverse_earn",
+        "return_redeem",
+        "adjust",
+      ],
       menu_item_type: ["item", "combo"],
       order_channel: ["counter", "kiosk", "online", "drive_thru"],
       order_item_status: ["pending", "sent", "ready", "voided"],
@@ -3018,6 +3381,12 @@ export const Constants = {
       order_type: ["dine_in", "takeaway", "delivery"],
       payment_method_type: ["cash", "card", "mobile_money", "other"],
       payment_status: ["captured", "refunded"],
+      promotion_type: [
+        "percent_off",
+        "amount_off",
+        "fixed_price",
+        "buy_x_get_y",
+      ],
       purchase_order_status: ["draft", "sent", "received", "cancelled"],
       shift_status: ["open", "pending_review", "approved", "flagged"],
       staff_role: ["admin", "manager", "cashier"],

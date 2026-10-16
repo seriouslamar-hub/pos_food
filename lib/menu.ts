@@ -2,6 +2,7 @@
  * The menu document returned by get_menu(), and helpers to read it. Pure;
  * used by the till, the admin preview and (later) offline caching.
  */
+import type { LoyaltySettings, MenuPromotion } from "./promotions";
 
 export type MenuModifier = {
   id: string;
@@ -77,6 +78,9 @@ export type MenuDoc = {
   stations: { id: string; name: string }[];
   /** Enabled payment methods, in till order. */
   payment_methods: MenuPaymentMethod[];
+  /** Promotions running at the branch (not coupons). Missing in old caches. */
+  promotions?: MenuPromotion[];
+  loyalty?: LoyaltySettings;
 };
 
 /** Light structural check of what get_menu returned. */

@@ -74,6 +74,8 @@ const ACTION_LABELS: Record<string, string> = {
   "order.void": "Items voided",
   "order.refund": "Refund",
   "order.offline_difference": "Offline price difference",
+  "order.promotion": "Promotion or points",
+  "customer.create": "Loyalty customer added",
   "stock.waste": "Waste recorded",
   "stock.transfer": "Stock transferred",
   "stock.count": "Stock counted",
@@ -103,6 +105,7 @@ export const AUDIT_ENTITIES: { value: string; label: string }[] = [
   { value: "suppliers", label: "Suppliers" },
   { value: "purchase_orders", label: "Purchase orders" },
   { value: "stock_counts", label: "Stock counts" },
+  { value: "promotions", label: "Promotions" },
 ];
 
 type Json =

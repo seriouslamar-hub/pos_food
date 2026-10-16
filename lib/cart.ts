@@ -2,6 +2,7 @@
  * The till's cart: what the cashier has rung up but not yet sent. Pure data
  * and functions; ids are UUIDs made on the device (plan rule 6).
  */
+import type { MenuPromotion } from "./promotions";
 
 export type CartComboChoice = {
   slotId: string;
@@ -35,6 +36,14 @@ export type CartLine = {
 
 export type OrderType = "takeaway" | "dine_in" | "delivery";
 
+/** The loyalty customer on an order (from find_customer / save_customer). */
+export type CartCustomer = {
+  id: string;
+  name: string | null;
+  phone: string;
+  pointsBalance: number;
+};
+
 export type Cart = {
   id: string;
   orderType: OrderType;
@@ -44,6 +53,11 @@ export type Cart = {
   lines: CartLine[];
   /** A discount on the whole order, shared across the lines. */
   discount?: Discount | null;
+  customer?: CartCustomer | null;
+  /** A coupon the customer gave, as check_coupon found it. */
+  coupon?: { code: string; promotion: MenuPromotion } | null;
+  /** Loyalty points to spend on this order. */
+  redeemPoints?: number;
 };
 
 export const MAX_QUANTITY = 999;
@@ -167,6 +181,9 @@ export type SubmitOrderPayload = {
   discount_override_id: string | null;
   /** A manager's approval for the price changes. */
   price_override_id: string | null;
+  customer_id: string | null;
+  coupon_code: string | null;
+  redeem_points: number;
   lines: {
     id: string;
     menu_item_id: string;
@@ -218,6 +235,9 @@ export function toSubmitPayload(
     discount: submitDiscount(cart.discount),
     discount_override_id: approvals.discountOverrideId ?? null,
     price_override_id: approvals.priceOverrideId ?? null,
+    customer_id: cart.customer?.id ?? null,
+    coupon_code: cart.coupon?.code ?? null,
+    redeem_points: cart.customer ? (cart.redeemPoints ?? 0) : 0,
     lines: cart.lines.map((line) => ({
       id: line.id,
       menu_item_id: line.menuItemId,

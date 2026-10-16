@@ -9,6 +9,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin/stock", label: "Stock" },
   { href: "/admin/menu", label: "Menu" },
   { href: "/admin/availability", label: "Availability" },
+  { href: "/admin/promotions", label: "Promotions" },
   { href: "/admin/ingredients", label: "Ingredients" },
   { href: "/admin/recipes", label: "Recipes" },
   { href: "/admin/suppliers", label: "Suppliers" },

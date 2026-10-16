@@ -7,11 +7,20 @@
  * gross = unit × quantity. Then the line's own discount, then its share of
  * the order discount (shared by what's left on each line). Inclusive taxes
  * are extracted from what's left, exclusive taxes are charged on the net.
- * All amounts are integer minor units, rounded half away from zero.
+ * Promotions and loyalty points come off after staff discounts and before
+ * tax (lib/promotions.ts). All amounts are integer minor units, rounded
+ * half away from zero.
  */
 import type { Cart, CartLine, Discount } from "./cart";
 import { comboProblems, modifierProblems } from "./choices";
 import type { MenuDoc, MenuIndex, MenuTax } from "./menu";
+import {
+  applyPromotions,
+  localParts,
+  loyaltyRedemption,
+  pointsEarned,
+  type AppliedPromotion,
+} from "./promotions";
 
 /** numerator / denominator rounded half away from zero. Mirrors public.round_div. */
 export function roundDiv(numerator: number, denominator: number): number {
@@ -154,8 +163,11 @@ export function allocateDiscount(
 export type LinePrice = {
   unitPrice: number;
   gross: number;
-  /** The line's own discount plus its share of the order discount. */
+  /** Everything off the line: its own discount, its share of the order
+   * discount, promotions and points. */
   discount: number;
+  promoDiscount: number;
+  loyaltyDiscount: number;
   orderDiscountShare: number;
   tax: number;
   total: number;
@@ -166,6 +178,7 @@ export type LinePrice = {
 type LineBase = {
   line: CartLine;
   taxCategory: string | null;
+  categoryId: string | null;
   unitPrice: number;
   gross: number;
   ownDiscount: number;
@@ -178,6 +191,7 @@ function baseLine(line: CartLine, index: MenuIndex): LineBase {
     return {
       line,
       taxCategory: null,
+      categoryId: null,
       unitPrice: 0,
       gross: 0,
       ownDiscount: 0,
@@ -199,6 +213,7 @@ function baseLine(line: CartLine, index: MenuIndex): LineBase {
   return {
     line,
     taxCategory: item.tax_category,
+    categoryId: item.category_id,
     unitPrice: unit,
     gross,
     ownDiscount: discountAmount(line.discount, gross),
@@ -209,9 +224,19 @@ function baseLine(line: CartLine, index: MenuIndex): LineBase {
 export type CartTotals = {
   lines: Map<string, LinePrice>;
   subtotal: number;
+  /** Every discount: staff discounts, promotions and points. */
   discountTotal: number;
+  /** Discounts staff gave (compared with their discount limit). */
+  staffDiscountTotal: number;
   /** The order discount (already included in discountTotal). */
   orderDiscount: number;
+  promotionTotal: number;
+  promotions: AppliedPromotion[];
+  /** Points spent and what they took off. */
+  loyaltyPoints: number;
+  loyaltyDiscount: number;
+  /** Points the order will earn once paid (with a customer). */
+  pointsToEarn: number;
   taxTotal: number;
   total: number;
   /** Tax breakdown for the receipt, by tax name. */
@@ -228,12 +253,49 @@ export function priceCart(
   cart: Cart,
   menu: MenuDoc,
   index: MenuIndex,
+  at: Date = new Date(),
 ): CartTotals {
   const bases = cart.lines.map((line) => baseLine(line, index));
   const left = bases.map((b) => b.gross - b.ownDiscount);
   const leftTotal = left.reduce((sum, amount) => sum + amount, 0);
   const orderDiscount = discountAmount(cart.discount, leftTotal);
   const shares = allocateDiscount(orderDiscount, left);
+
+  // Promotions, then points, on what's left after staff discounts.
+  const promoLines = bases.map((b, i) => ({
+    id: b.line.id,
+    menuItemId: b.line.menuItemId,
+    categoryId: b.categoryId,
+    quantity: b.line.quantity,
+    left: Math.max(0, left[i] - shares[i]),
+  }));
+  const promos = applyPromotions(
+    [
+      ...(menu.promotions ?? []),
+      ...(cart.coupon ? [cart.coupon.promotion] : []),
+    ],
+    {
+      branchId: menu.branch_id,
+      channel: "counter",
+      orderType: cart.orderType,
+      hasCustomer: Boolean(cart.customer),
+      local: localParts(at, menu.timezone),
+    },
+    promoLines,
+  );
+  const afterPromo = promoLines.map(
+    (l) => l.left - (promos.perLine.get(l.id) ?? 0),
+  );
+  const loyalty = menu.loyalty;
+  const redemption =
+    cart.customer && loyalty?.enabled
+      ? loyaltyRedemption(
+          Math.min(cart.redeemPoints ?? 0, cart.customer.pointsBalance),
+          loyalty.point_value,
+          afterPromo.reduce((sum, a) => sum + a, 0),
+        )
+      : { amount: 0, points: 0 };
+  const loyaltyShares = allocateDiscount(redemption.amount, afterPromo);
 
   const lines = new Map<string, LinePrice>();
   const byTax = new Map<
@@ -248,8 +310,12 @@ export function priceCart(
   if (cart.discount?.type === "fixed" && cart.discount.value > leftTotal) {
     problems.push("The order discount is more than the order");
   }
+  let staffDiscountTotal = 0;
   bases.forEach((base, i) => {
-    const discount = base.ownDiscount + shares[i];
+    const promoDiscount = promos.perLine.get(base.line.id) ?? 0;
+    const discount =
+      base.ownDiscount + shares[i] + promoDiscount + loyaltyShares[i];
+    staffDiscountTotal += base.ownDiscount + shares[i];
     const taxes =
       base.taxCategory === null
         ? { taxes: [], tax: 0, total: 0 }
@@ -258,6 +324,8 @@ export function priceCart(
       unitPrice: base.unitPrice,
       gross: base.gross,
       discount,
+      promoDiscount,
+      loyaltyDiscount: loyaltyShares[i],
       orderDiscountShare: shares[i],
       tax: taxes.tax,
       total: taxes.total,
@@ -286,7 +354,16 @@ export function priceCart(
     lines,
     subtotal,
     discountTotal,
+    staffDiscountTotal,
     orderDiscount,
+    promotionTotal: promos.applied.reduce((sum, p) => sum + p.amount, 0),
+    promotions: promos.applied,
+    loyaltyPoints: redemption.points,
+    loyaltyDiscount: redemption.amount,
+    pointsToEarn:
+      cart.customer && loyalty?.enabled
+        ? pointsEarned(total, loyalty.earn_per)
+        : 0,
     taxTotal,
     total,
     taxes: [...byTax.values()],
@@ -295,12 +372,13 @@ export function priceCart(
 }
 
 /**
- * Discounts as a share of the subtotal, in basis points: what's compared
- * with the cashier's discount limit (all discounts together).
+ * Staff discounts as a share of the subtotal, in basis points: what's
+ * compared with the cashier's discount limit (all staff discounts
+ * together; promotions and points don't count).
  */
 export function overDiscountLimit(
-  totals: Pick<CartTotals, "discountTotal" | "subtotal">,
+  totals: Pick<CartTotals, "staffDiscountTotal" | "subtotal">,
   limitBps: number,
 ): boolean {
-  return totals.discountTotal * 10000 > limitBps * totals.subtotal;
+  return totals.staffDiscountTotal * 10000 > limitBps * totals.subtotal;
 }

@@ -54,6 +54,7 @@ import { localOrderSummary } from "@/lib/offline/local-order";
 import { CartPanel } from "./cart-panel";
 import { CashActions } from "./cash-actions";
 import { LineOptionsDialog, OrderDiscountDialog } from "./discount-dialogs";
+import { CouponDialog, CustomerDialog } from "./loyalty-dialogs";
 import { KitchenOrders } from "./kitchen-orders";
 import { OrderLookup } from "./order-lookup";
 import { ItemSheet } from "./item-sheet";
@@ -144,6 +145,8 @@ export function OrderScreen({
   );
   const [lineOptions, setLineOptions] = useState<CartLine | null>(null);
   const [orderDiscountOpen, setOrderDiscountOpen] = useState(false);
+  const [loyaltyOpen, setLoyaltyOpen] = useState(false);
+  const [couponOpen, setCouponOpen] = useState(false);
   // A manager's approval being asked for, and who's waiting for it.
   const [approval, setApproval] = useState<{
     permission: Permission;
@@ -773,7 +776,39 @@ export function OrderScreen({
         }
         onLineOptions={setLineOptions}
         onOrderDiscount={() => setOrderDiscountOpen(true)}
+        onLoyalty={
+          offline || !menu.loyalty?.enabled
+            ? undefined
+            : () => setLoyaltyOpen(true)
+        }
+        onCoupon={offline ? undefined : () => setCouponOpen(true)}
       />
+
+      {loyaltyOpen ? (
+        <CustomerDialog
+          current={cart.customer ?? null}
+          redeemPoints={cart.redeemPoints ?? 0}
+          loyalty={menu.loyalty}
+          currency={menu.currency_code}
+          timezone={menu.timezone}
+          maxRedeemValue={totals.total + totals.loyaltyDiscount}
+          onClose={() => setLoyaltyOpen(false)}
+          onDone={(customer, redeemPoints) => {
+            setCart((c) => ({ ...c, customer, redeemPoints }));
+            setLoyaltyOpen(false);
+          }}
+        />
+      ) : null}
+      {couponOpen ? (
+        <CouponDialog
+          current={cart.coupon?.code ?? null}
+          onClose={() => setCouponOpen(false)}
+          onDone={(coupon) => {
+            setCart((c) => ({ ...c, coupon }));
+            setCouponOpen(false);
+          }}
+        />
+      ) : null}
 
       {lineOptions && index.items.get(lineOptions.menuItemId) ? (
         <LineOptionsDialog

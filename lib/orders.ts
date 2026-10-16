@@ -19,6 +19,9 @@ export type OrderLineSummary = {
   /** The line's own discount as given (line_discount adds the order share). */
   discount: OrderDiscount | null;
   order_discount_share: number;
+  /** What promotions and loyalty points took off the line (in line_discount). */
+  promo_discount?: number;
+  loyalty_discount?: number;
   /** Set when the cashier changed the price: the menu price it replaced. */
   price_override_from: number | null;
   price_override_reason: string | null;
@@ -122,7 +125,31 @@ export type OrderSummary = {
   change_given: number;
   refunds: OrderRefund[];
   refunded_total: number;
+  promotion_total?: number;
+  coupon_code?: string | null;
+  promotions?: { id: string; name: string; amount: number }[];
+  customer?: {
+    id: string;
+    name: string | null;
+    phone: string;
+    points_balance: number;
+  } | null;
+  loyalty?: {
+    points_redeemed: number;
+    discount: number;
+    points_earned: number;
+  };
 };
+
+/** What staff took off a line itself (not the order discount, promotions or points). */
+export function staffLineDiscount(line: OrderLineSummary): number {
+  return (
+    line.line_discount -
+    line.order_discount_share -
+    (line.promo_discount ?? 0) -
+    (line.loyalty_discount ?? 0)
+  );
+}
 
 export function parseOrderSummary(json: unknown): OrderSummary {
   const order = json as Partial<OrderSummary> | null;
@@ -143,6 +170,8 @@ export function parseOrderSummary(json: unknown): OrderSummary {
     change_given: order.change_given ?? 0,
     refunds: order.refunds ?? [],
     refunded_total: order.refunded_total ?? 0,
+    promotions: order.promotions ?? [],
+    customer: order.customer ?? null,
   };
 }
 

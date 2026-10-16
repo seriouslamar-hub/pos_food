@@ -31,6 +31,8 @@ export function CartPanel({
   onSendToKitchen,
   onLineOptions,
   onOrderDiscount,
+  onLoyalty,
+  onCoupon,
 }: {
   cart: Cart;
   index: MenuIndex;
@@ -54,6 +56,9 @@ export function CartPanel({
   /** Discount or price for one line. */
   onLineOptions: (line: CartLine) => void;
   onOrderDiscount: () => void;
+  /** Find or change the loyalty customer (online only). */
+  onLoyalty?: () => void;
+  onCoupon?: () => void;
 }) {
   const money = (amount: number) => formatAmount(amount, currency);
   const empty = cart.lines.length === 0;
@@ -232,7 +237,7 @@ export function CartPanel({
               {formatAmount(totals.subtotal, currency)}
             </dd>
           </div>
-          {totals.discountTotal ? (
+          {totals.staffDiscountTotal ? (
             <div
               className="flex justify-between text-emerald-700 dark:text-emerald-400"
               data-testid="cart-discounts"
@@ -243,7 +248,35 @@ export function CartPanel({
                   ? ` (order ${describeDiscount(cart.discount, money)})`
                   : ""}
               </dt>
-              <dd className="tabular-nums">−{money(totals.discountTotal)}</dd>
+              <dd className="tabular-nums">
+                −{money(totals.staffDiscountTotal)}
+              </dd>
+            </div>
+          ) : null}
+          {totals.promotions.map((p) => (
+            <div
+              key={p.id}
+              className="flex justify-between text-emerald-700 dark:text-emerald-400"
+              data-testid="cart-promotion"
+            >
+              <dt>{p.name}</dt>
+              <dd className="tabular-nums">−{money(p.amount)}</dd>
+            </div>
+          ))}
+          {cart.coupon &&
+          !totals.promotions.some((p) => p.id === cart.coupon!.promotion.id) ? (
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <dt>Coupon {cart.coupon.code}</dt>
+              <dd>doesn&apos;t apply to this order yet</dd>
+            </div>
+          ) : null}
+          {totals.loyaltyDiscount ? (
+            <div
+              className="flex justify-between text-emerald-700 dark:text-emerald-400"
+              data-testid="cart-points"
+            >
+              <dt>Points ({totals.loyaltyPoints})</dt>
+              <dd className="tabular-nums">−{money(totals.loyaltyDiscount)}</dd>
             </div>
           ) : null}
           {exclusiveTax ? (
@@ -269,6 +302,40 @@ export function CartPanel({
             </dd>
           </div>
         </dl>
+        {onLoyalty || onCoupon || cart.customer ? (
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              size="touch"
+              className="min-w-0 px-2"
+              disabled={busy || !onLoyalty}
+              onClick={onLoyalty}
+              data-testid="loyalty-button"
+            >
+              <span className="truncate">
+                {cart.customer
+                  ? `${cart.customer.name ?? cart.customer.phone} · ${cart.customer.pointsBalance - totals.loyaltyPoints} pts`
+                  : "Customer"}
+              </span>
+            </Button>
+            <Button
+              variant="outline"
+              size="touch"
+              className="min-w-0 px-2"
+              disabled={busy || !onCoupon}
+              onClick={onCoupon}
+            >
+              <span className="truncate">
+                {cart.coupon ? `Coupon ${cart.coupon.code}` : "Coupon"}
+              </span>
+            </Button>
+          </div>
+        ) : null}
+        {cart.customer && totals.pointsToEarn ? (
+          <p className="text-sm text-muted-foreground">
+            Earns {totals.pointsToEarn} points when paid.
+          </p>
+        ) : null}
         {error ? (
           <Alert variant="destructive" aria-live="polite">
             <AlertDescription className="text-base" data-testid="cart-error">

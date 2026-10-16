@@ -34,6 +34,7 @@ const PAGES = [
   ["/sales", "Sales"],
   ["/tax", "Tax"],
   ["/discounts", "Discounts"],
+  ["/promotions", "Promotions"],
 ] as const;
 
 /** Page links, the branch picker (admins) and, except on Today, the dates. */
@@ -868,6 +869,144 @@ export async function DiscountsView({ ctx }: { ctx: ReportsContext }) {
       {report.total === 0 && report.price_overrides.count === 0 ? (
         <EmptyState>No discounts in these dates.</EmptyState>
       ) : null}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Promotions and loyalty
+// ---------------------------------------------------------------------------
+
+type PromotionReport = {
+  total: number;
+  orders: number;
+  promotions: {
+    id: string;
+    name: string;
+    coupon_code: string | null;
+    uses: number;
+    cost: number;
+    sales: number;
+    average_cost: number;
+  }[];
+  daily: { date: string; uses: number; cost: number }[];
+  loyalty: {
+    issued: number;
+    redeemed: number;
+    reversed: number;
+    returned: number;
+    redeemed_value: number;
+    customers: number;
+    orders: number;
+    sales: number;
+  };
+};
+
+export async function PromotionsView({ ctx }: { ctx: ReportsContext }) {
+  const supabase = await createClient();
+  const [{ data, error }, { data: sales }] = await Promise.all([
+    supabase.rpc("report_promotions", {
+      p_branch_id: branchArg(ctx.branchId),
+      p_from: ctx.from,
+      p_to: ctx.to,
+    }),
+    supabase.rpc("report_sales", {
+      p_branch_id: branchArg(ctx.branchId),
+      p_from: ctx.from,
+      p_to: ctx.to,
+    }),
+  ]);
+  if (error || !data)
+    return (
+      <div className="flex flex-col gap-5">
+        <ReportsNav ctx={ctx} current="/promotions" />
+        <ReportError message={error?.message ?? "No report."} />
+      </div>
+    );
+  const report = data as unknown as PromotionReport;
+  const salesReport = sales as unknown as SalesReport | null;
+  const currency = salesReport?.currency_code ?? null;
+  const money = reportMoney(currency);
+  const gross = salesReport?.summary.gross_sales ?? 0;
+  const l = report.loyalty;
+  const range = `${ctx.from}-to-${ctx.to}`;
+  return (
+    <div className="flex flex-col gap-5">
+      <ReportsNav ctx={ctx} current="/promotions" />
+      <MixedCurrencies currency={currency} />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Stat
+          label="Promotion cost"
+          value={money(report.total)}
+          note={`${report.orders} orders${gross ? ` · ${Math.round((report.total / gross) * 1000) / 10}% of sales` : ""}`}
+          testId="promotion-cost"
+        />
+        <Stat
+          label="Points spent"
+          value={money(l.redeemed_value)}
+          note={`${l.redeemed.toLocaleString("en-GB")} points`}
+          testId="points-spent"
+        />
+        <Stat
+          label="Points issued"
+          value={l.issued.toLocaleString("en-GB")}
+          note={`${l.reversed} taken back by refunds · ${l.returned} returned`}
+          testId="points-issued"
+        />
+        <Stat
+          label="Loyalty customers"
+          value={String(l.customers)}
+          note={`${l.orders} orders · ${money(l.sales)}`}
+        />
+      </div>
+      <ChartCard
+        title="By promotion"
+        rows={report.promotions.map((p) => ({
+          name: p.name,
+          coupon: p.coupon_code ?? "",
+          uses: p.uses,
+          cost: p.cost,
+          average_cost: p.average_cost,
+          sales: p.sales,
+        }))}
+        columns={[
+          { key: "name", label: "Promotion" },
+          { key: "coupon", label: "Coupon" },
+          { key: "uses", label: "Uses", kind: "number" },
+          { key: "cost", label: "Cost", kind: "money" },
+          { key: "average_cost", label: "Average per order", kind: "money" },
+          { key: "sales", label: "Order sales", kind: "money" },
+        ]}
+        chart={{
+          type: "bar",
+          x: "name",
+          series: [{ key: "cost", label: "Cost" }],
+          horizontal: true,
+        }}
+        currency={currency}
+        fileName={`promotions-${range}`}
+        initialView="table"
+      />
+      <ChartCard
+        title="Promotion cost by day"
+        rows={report.daily.map((d) => ({
+          date: d.date,
+          cost: d.cost,
+          uses: d.uses,
+        }))}
+        columns={[
+          { key: "date", label: "Date" },
+          { key: "cost", label: "Cost", kind: "money" },
+          { key: "uses", label: "Uses", kind: "number" },
+        ]}
+        chart={{
+          type: "bar",
+          x: "date",
+          series: [{ key: "cost", label: "Cost" }],
+        }}
+        currency={currency}
+        fileName={`promotion-cost-by-day-${range}`}
+      />
     </div>
   );
 }
