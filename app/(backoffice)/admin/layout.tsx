@@ -4,6 +4,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin", label: "Overview", exact: true },
   { href: "/admin/day", label: "Business day" },
   { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/reports", label: "Reports" },
   { href: "/admin/exceptions", label: "Exceptions" },
   { href: "/admin/stock", label: "Stock" },
   { href: "/admin/menu", label: "Menu" },

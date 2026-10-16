@@ -4,6 +4,7 @@ const MANAGER_NAV: NavItem[] = [
   { href: "/manager", label: "Overview", exact: true },
   { href: "/manager/day", label: "Business day" },
   { href: "/manager/orders", label: "Orders" },
+  { href: "/manager/reports", label: "Reports" },
   { href: "/manager/exceptions", label: "Exceptions" },
   { href: "/manager/inventory", label: "Stock" },
   { href: "/manager/availability", label: "Availability" },

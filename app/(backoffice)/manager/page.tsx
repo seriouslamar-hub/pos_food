@@ -82,6 +82,7 @@ async function ManagerHome() {
           title: "Reports",
           description: "Branch sales, cashier performance and exceptions.",
           phase: "Phase 12",
+          href: "/manager/reports",
         },
       ]}
     />

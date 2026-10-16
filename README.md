@@ -174,6 +174,13 @@ A till keeps selling when the internet drops, and sends everything once the conn
 - **Stock (managers for their branch, admins for any):** stock on hand and its value at cost, with ingredients below their reorder level highlighted and listed on the manager home page. **Record waste** with a reason, **Transfer stock** to another branch, **Purchase orders** (draft, optionally suggested from the last 7 or 14 days of use; mark as sent; receive a delivery where quantities and prices can differ, and the price paid becomes the ingredient's cost), and **Counts** (everything or one category; the difference is applied when a manager approves the count).
 - **Reports:** stock value, theoretical usage (what the recipes of what was sold used) against actual usage (plus waste and missing stock, less returns), and waste by reason.
 
+### Reports
+
+- **Reports** in the back office (managers: their branch; admins: any branch or **All branches** with a branch comparison). **Today**: sales, orders and average order against the same weekday last week up to the same time, sales by hour, and live orders (refreshes every 30 seconds). **Sales** for any dates up to a year: by day and hour, product mix, channels, order types, payment methods, cashier performance (voids and refunds by who did them) and speed of service (sent → ready → collected). **Tax** by rate and day, **Discounts** by reason and staff, plus links to **Exceptions** and **Z reports**. Cashiers see only their own shift (the X report on the till).
+- Every number is worked out in the database (`report_*` functions), by the Z report's rules: an order counts on its business date once paid; payments and refunds on the business day of the shift that took them. So report totals for a day always match its Z report.
+- Every chart has a **Table** view and a **CSV** download. **Sales / Payments / Tax CSV** give the accountant one row per order, per payment or refund, or per tax per day (UTF-8 for Excel, amounts as decimals).
+- **Speed:** closing a day stores its totals and breakdowns in `daily_sales_summary`, so long ranges read one row per day; only the open day is worked out live. `supabase/perf/year_of_sales.sql` loads a year of sales (~110,000 orders) locally to check: a year's sales report runs in about 50 ms in the database.
+
 ### Receipts, kitchen tickets and the cash drawer
 
 The till prints through the browser (`lib/printing.ts`): receipts after a sale when `receipt.auto_print` is on (or with **Print receipt**), **Reprint last receipt** (marked COPY), and kitchen tickets when `print.kitchen_tickets` is on, for kitchens without a screen. To set up a till's printer:

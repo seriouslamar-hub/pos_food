@@ -495,6 +495,75 @@ export type Database = {
           },
         ]
       }
+      daily_sales_summary: {
+        Row: {
+          branch_id: string
+          breakdown: Json | null
+          business_date: string
+          business_day_id: string
+          created_at: string
+          discounts: number
+          gross_sales: number
+          items_sold: number
+          net_sales: number
+          orders: number
+          refunds_amount: number
+          refunds_count: number
+          tax: number
+          voids_amount: number
+          voids_count: number
+        }
+        Insert: {
+          branch_id: string
+          breakdown?: Json | null
+          business_date: string
+          business_day_id: string
+          created_at?: string
+          discounts?: number
+          gross_sales?: number
+          items_sold?: number
+          net_sales?: number
+          orders?: number
+          refunds_amount?: number
+          refunds_count?: number
+          tax?: number
+          voids_amount?: number
+          voids_count?: number
+        }
+        Update: {
+          branch_id?: string
+          breakdown?: Json | null
+          business_date?: string
+          business_day_id?: string
+          created_at?: string
+          discounts?: number
+          gross_sales?: number
+          items_sold?: number
+          net_sales?: number
+          orders?: number
+          refunds_amount?: number
+          refunds_count?: number
+          tax?: number
+          voids_amount?: number
+          voids_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_sales_summary_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_sales_summary_business_day_id_fkey"
+            columns: ["business_day_id"]
+            isOneToOne: true
+            referencedRelation: "business_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       device_setup_codes: {
         Row: {
           code_hash: string
@@ -2238,6 +2307,10 @@ export type Database = {
       bump_items: { Args: { p_item_ids: string[] }; Returns: Json }
       business_day_summary: { Args: { p_day_id: string }; Returns: Json }
       can_access_branch: { Args: { p_branch_id: string }; Returns: boolean }
+      check_report_dates: {
+        Args: { p_from: string; p_to: string }
+        Returns: undefined
+      }
       close_business_day: {
         Args: {
           p_branch_id?: string
@@ -2318,6 +2391,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["staff_role"]
       }
+      day_breakdown: { Args: { p_day_id: string }; Returns: Json }
       day_control_actor: {
         Args: {
           p_branch_id: string
@@ -2462,7 +2536,56 @@ export type Database = {
         Args: { p_ids: string[]; p_kind: string; p_parent_id?: string }
         Returns: undefined
       }
+      report_branches: { Args: { p_branch_id: string }; Returns: string[] }
+      report_daily_totals: {
+        Args: { p_branches: string[]; p_from: string; p_to: string }
+        Returns: {
+          branch_id: string
+          breakdown: Json | null
+          business_date: string
+          business_day_id: string
+          created_at: string
+          discounts: number
+          gross_sales: number
+          items_sold: number
+          net_sales: number
+          orders: number
+          refunds_amount: number
+          refunds_count: number
+          tax: number
+          voids_amount: number
+          voids_count: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "daily_sales_summary"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      report_dashboard: { Args: { p_branch_id: string }; Returns: Json }
+      report_discounts: {
+        Args: { p_branch_id: string; p_from: string; p_to: string }
+        Returns: Json
+      }
       report_exceptions: {
+        Args: { p_branch_id: string; p_from: string; p_to: string }
+        Returns: Json
+      }
+      report_export: {
+        Args: {
+          p_branch_id: string
+          p_from: string
+          p_kind: string
+          p_to: string
+        }
+        Returns: Json
+      }
+      report_sales: {
+        Args: { p_branch_id: string; p_from: string; p_to: string }
+        Returns: Json
+      }
+      report_tax: {
         Args: { p_branch_id: string; p_from: string; p_to: string }
         Returns: Json
       }
@@ -2642,6 +2765,38 @@ export type Database = {
       suggest_purchase: {
         Args: { p_branch_id: string; p_days?: number }
         Returns: Json
+      }
+      summary_row: {
+        Args: {
+          p_branch_id: string
+          p_breakdown?: Json
+          p_date: string
+          p_day_id: string
+          p_report: Json
+        }
+        Returns: {
+          branch_id: string
+          breakdown: Json | null
+          business_date: string
+          business_day_id: string
+          created_at: string
+          discounts: number
+          gross_sales: number
+          items_sold: number
+          net_sales: number
+          orders: number
+          refunds_amount: number
+          refunds_count: number
+          tax: number
+          voids_amount: number
+          voids_count: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "daily_sales_summary"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       till_state: { Args: { p_session_id: string }; Returns: Json }
       transfer_stock: {

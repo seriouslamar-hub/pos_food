@@ -104,6 +104,7 @@ async function AdminHome() {
           title: "Reports",
           description: "Sales, tax and performance across every branch.",
           phase: "Phase 12",
+          href: "/admin/reports",
         },
       ]}
     />
