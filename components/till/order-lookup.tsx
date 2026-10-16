@@ -542,7 +542,7 @@ function ReasonPicker({
           <Button
             key={r}
             type="button"
-            variant={value === r ? "default" : "secondary"}
+            variant={value === r ? "default" : "tab"}
             className="h-11 px-3"
             onClick={() => onChange(r)}
           >

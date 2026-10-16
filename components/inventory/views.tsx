@@ -82,7 +82,7 @@ function SubNav({ ctx, current }: { ctx: InventoryContext; current: string }) {
             href={ctx.href(path)}
             aria-current={current === path ? "page" : undefined}
             className={buttonVariants({
-              variant: current === path ? "default" : "outline",
+              variant: current === path ? "default" : "tab",
               size: "lg",
             })}
           >

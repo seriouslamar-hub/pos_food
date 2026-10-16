@@ -56,7 +56,7 @@ function ReportsNav({
             href={ctx.href(path, path === "" ? null : undefined)}
             aria-current={current === path ? "page" : undefined}
             className={buttonVariants({
-              variant: current === path ? "default" : "outline",
+              variant: current === path ? "default" : "tab",
               size: "lg",
             })}
           >
@@ -65,13 +65,13 @@ function ReportsNav({
         ))}
         <Link
           href={ctx.exceptionsHref}
-          className={buttonVariants({ variant: "outline", size: "lg" })}
+          className={buttonVariants({ variant: "tab", size: "lg" })}
         >
           Exceptions
         </Link>
         <Link
           href={ctx.dayHref}
-          className={buttonVariants({ variant: "outline", size: "lg" })}
+          className={buttonVariants({ variant: "tab", size: "lg" })}
         >
           Z reports
         </Link>

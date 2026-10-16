@@ -163,17 +163,17 @@ export function KdsApp({
   }, []);
 
   return (
-    <div className="flex h-dvh flex-col text-white">
-      <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-white/10 px-5">
+    <div className="flex h-dvh flex-col text-foreground">
+      <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b px-5">
         <h1 className="text-2xl font-bold" data-testid="kds-title">
           {station ? station.name : "All stations"}
-          <span className="ml-3 text-base font-normal text-neutral-400">
+          <span className="ml-3 text-base font-normal text-muted-foreground">
             {deviceName}
           </span>
         </h1>
         <div className="flex items-center gap-3">
           <span
-            className="text-lg text-neutral-300 tabular-nums"
+            className="text-lg text-muted-foreground tabular-nums"
             data-testid="kds-count"
           >
             {active.length} {active.length === 1 ? "ticket" : "tickets"}
@@ -197,12 +197,12 @@ export function KdsApp({
       ) : null}
       <main className="grid min-h-0 flex-1 auto-rows-max grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-3 overflow-y-auto p-3">
         {orders === null ? (
-          <p className="col-span-full p-6 text-xl text-neutral-400">
+          <p className="col-span-full p-6 text-xl text-muted-foreground">
             Loading orders…
           </p>
         ) : active.length === 0 ? (
           <p
-            className="col-span-full p-6 text-2xl text-neutral-400"
+            className="col-span-full p-6 text-2xl text-muted-foreground"
             data-testid="kds-empty"
           >
             Nothing to make.
@@ -273,7 +273,7 @@ function TicketCard({
   const { order } = ticket;
   return (
     <article
-      className="flex flex-col overflow-hidden rounded-xl border border-white/12 border-white/15 bg-white/[0.06] backdrop-blur-xl"
+      className="flex flex-col overflow-hidden rounded-xl border bg-card backdrop-blur-xl"
       data-testid="kds-ticket"
       data-level={age.level}
       aria-label={`Order ${order.order_number}`}
@@ -282,10 +282,10 @@ function TicketCard({
         className={cn(
           "flex items-center justify-between gap-2 px-4 py-2",
           age.level === "late"
-            ? "bg-white text-black"
+            ? "bg-black text-white"
             : age.level === "warn"
-              ? "bg-neutral-400 text-black"
-              : "bg-white/10",
+              ? "bg-neutral-300 text-black"
+              : "bg-black/5",
         )}
       >
         <span className="text-3xl font-black">#{order.order_number}</span>
@@ -315,14 +315,14 @@ function TicketCard({
           const voided = item.status === "voided";
           const made = !voided && item.bumped_at !== null;
           return (
-            <li key={item.id} className="border-t border-white/10">
+            <li key={item.id} className="border-t">
               <button
                 type="button"
                 disabled={ids.length === 0}
                 onClick={() => onBumpItem(ids)}
                 className={cn(
                   "flex min-h-14 w-full flex-col items-start px-4 py-2 text-left",
-                  voided && "bg-white/10",
+                  voided && "bg-black/5",
                   made && "opacity-40",
                 )}
                 data-testid="kds-line"
@@ -336,16 +336,16 @@ function TicketCard({
                 >
                   {item.quantity} × {item.short_name_snapshot}
                   {voided ? (
-                    <span className="ml-2 text-base font-black tracking-wide text-white uppercase no-underline">
+                    <span className="ml-2 text-base font-black tracking-wide text-foreground uppercase no-underline">
                       VOID
                     </span>
                   ) : null}
                 </span>
                 {meal ? (
-                  <span className="text-sm text-neutral-400">{meal}</span>
+                  <span className="text-sm text-muted-foreground">{meal}</span>
                 ) : null}
                 {item.modifiers.length ? (
-                  <span className="text-base text-neutral-300 italic">
+                  <span className="text-base text-muted-foreground italic">
                     {item.modifiers.map((m) => m.name).join(", ")}
                   </span>
                 ) : null}
@@ -355,7 +355,7 @@ function TicketCard({
                     className={cn(
                       "text-base",
                       p.status === "voided" || p.bumped_at
-                        ? "text-white0 line-through"
+                        ? "text-muted-foreground line-through"
                         : "",
                     )}
                   >
@@ -366,7 +366,7 @@ function TicketCard({
                   </span>
                 ))}
                 {item.notes ? (
-                  <span className="text-base font-semibold text-neutral-200">
+                  <span className="text-base font-semibold text-foreground/80">
                     “{item.notes}”
                   </span>
                 ) : null}
@@ -376,13 +376,11 @@ function TicketCard({
         })}
       </ul>
       {order.notes ? (
-        <p className="border-t border-white/10 px-4 py-2 text-neutral-200">
-          {order.notes}
-        </p>
+        <p className="border-t px-4 py-2 text-foreground/80">{order.notes}</p>
       ) : null}
       <Button
         size="touch"
-        className="m-3 h-14 bg-white text-xl font-bold text-black hover:bg-neutral-200"
+        className="m-3 h-14 bg-black text-xl font-bold text-white hover:bg-neutral-800"
         onClick={onBumpTicket}
         aria-label={`Done with order ${order.order_number}`}
       >

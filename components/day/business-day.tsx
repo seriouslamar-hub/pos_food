@@ -128,7 +128,7 @@ export async function BusinessDay({
             <h2 className="flex items-center gap-2 text-xl font-semibold">
               {formatDate(detail.day.business_date)}
               <Badge
-                variant={detail.day.status === "open" ? "default" : "secondary"}
+                variant={detail.day.status === "open" ? "default" : "outline"}
               >
                 {detail.day.status === "open" ? "Open" : "Closed"}
               </Badge>

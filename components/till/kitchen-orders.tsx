@@ -89,7 +89,7 @@ export function KitchenOrders({
         </span>
         <Button
           size="touch"
-          variant={order.ready_at ? "default" : "outline"}
+          variant={order.ready_at ? "default" : "tab"}
           disabled={!order.paid_at}
           onClick={() => void collected(order)}
         >
@@ -103,7 +103,7 @@ export function KitchenOrders({
     <>
       <Button
         size="lg"
-        variant={ready.length ? "default" : "outline"}
+        variant={ready.length ? "default" : "tab"}
         className="h-12 px-4 text-base"
         disabled={disabled}
         onClick={() => setOpen(true)}

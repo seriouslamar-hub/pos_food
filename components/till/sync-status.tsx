@@ -38,7 +38,7 @@ export function SyncBadge({ canDiscard }: { canDiscard: boolean }) {
           "flex min-h-11 items-center gap-2 rounded-full px-4 text-base font-medium",
           state.failed
             ? "bg-destructive/10 text-destructive"
-            : "bg-white/15 text-foreground ring-1 ring-white/25",
+            : "bg-black/5 text-foreground ring-1 ring-black/15",
         )}
         data-testid="sync-badge"
       >
