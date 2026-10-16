@@ -1,0 +1,49 @@
+name: Nightly database backup
+
+# Every night: dump the production database (roles, schema, data),
+# encrypt it with BACKUP_PASSPHRASE and keep it as a workflow artifact for
+# 30 days. The repository is public, so backups are only ever stored
+# encrypted. Restore with scripts/restore-backup.sh (see docs/operations.md).
+on:
+  schedule:
+    - cron: "30 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Check the passphrase is set
+        run: test -n "$BACKUP_PASSPHRASE" || { echo "::error::Set the BACKUP_PASSPHRASE secret"; exit 1; }
+      - run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+      - name: Dump
+        run: |
+          set -euo pipefail
+          mkdir -p dump
+          supabase db dump --linked --role-only -f dump/roles.sql
+          supabase db dump --linked -f dump/schema.sql
+          supabase db dump --linked --data-only --use-copy -f dump/data.sql
+          test -s dump/schema.sql && test -s dump/data.sql
+      - name: Encrypt
+        run: |
+          set -euo pipefail
+          name="pos-backup-$(date -u +%Y%m%d-%H%M)"
+          tar -czf "$name.tar.gz" -C dump .
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" \
+            --symmetric --cipher-algo AES256 -o "$name.tar.gz.gpg" "$name.tar.gz"
+          rm -rf dump "$name.tar.gz"
+          echo "BACKUP_FILE=$name.tar.gz.gpg" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BACKUP_FILE }}
+          path: ${{ env.BACKUP_FILE }}
+          retention-days: 30
+          if-no-files-found: error

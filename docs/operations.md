@@ -20,21 +20,21 @@
 
 ## Backups
 
-- **Daily backups:** Supabase takes them on paid plans (Pro keeps 7 days; Point-in-Time Recovery is an add-on). Check **Supabase → Database → Backups** shows recent backups.
-- **Free plan:** there are no automatic backups. Upgrade before going live, or schedule `supabase db dump` yourself.
+- **Nightly backups (all plans):** `.github/workflows/backup.yml` runs at 02:30 UTC every night. It dumps the production database (roles, schema and all data, including logins), encrypts it with the `BACKUP_PASSPHRASE` secret (AES-256, gpg) and keeps it for 30 days under **Actions → Nightly database backup → Artifacts**. The repository is public, so backups are only stored encrypted. Keep the passphrase somewhere safe outside GitHub (a password manager): without it the backups can't be opened. You can also run it on demand from the Actions tab.
+- **Supabase's own backups:** on the Pro plan Supabase also keeps daily backups for 7 days (point-in-time recovery is an add-on). As of 16 Oct 2026 the project showed none, which is the free plan.
 
-### Test a restore (do this before go-live, then every quarter)
+### Test a restore (before go-live, then every quarter)
 
-1. Create a new, separate Supabase project (e.g. `pos-restore-test`).
-2. Restore into it:
-   - **From a dump:** download the latest backup (Database → Backups) and load it.
-   - **Or:** `supabase db dump --db-url "$PROD_DB_URL" -f prod.sql` (and `--data-only -f data.sql`), then load both into the new project with `psql`.
-3. Point a local copy of the app at the restored project (`.env.local`) and check:
-   - you can sign in
-   - yesterday's Z report matches
-   - order totals and stock look right
-4. Delete the test project.
-5. Write down the date and how long it took.
+1. Download the latest backup artifact from the Actions tab and unzip it, which gives `pos-backup-YYYYMMDD-HHMM.tar.gz.gpg`.
+2. With the local stack running (`supabase start`, then `supabase db reset --no-seed`), run `scripts/restore-backup.sh pos-backup-....tar.gz.gpg` and enter the passphrase. It prints how many logins, orders and audit entries came back. Compare them with production.
+3. **Restoring for real** (production is lost):
+   1. Create a new Supabase project.
+   2. Apply the migrations: `supabase link --project-ref <new>` then `supabase db push`.
+   3. Run `scripts/restore-backup.sh <file> "<new project's database URL>"`.
+   4. Point Vercel's three Supabase variables at the new project and redeploy.
+4. Write down the date and how long it took.
+
+**Restore test, 16 Oct 2026:** production dump restored into a freshly migrated local database in under a second. Logins (with password hashes), staff, branches, settings, permissions and all 73 audit entries matched production exactly.
 
 ## Security checklist
 
@@ -46,7 +46,8 @@
   - money tables can only change through RPCs
 - **Rate limits:** creating logins, devices and setup codes is rate limited (`public.rate_limits`).
 - **Supabase advisors:** run them after each phase (Supabase → Advisors). The "security definer function executable" warnings are the app's RPC API and are expected; each function checks permissions itself.
-- **Leaked-password protection:** turn on Supabase → Authentication → Policies → **Leaked password protection** (paid plans).
+- **Passwords:** at least 8 characters (set 16 Oct 2026). **Leaked-password protection** (refusing passwords known from data breaches) needs the Supabase Pro plan: turn it on under Authentication → Policies after upgrading.
+- **Repository visibility:** the GitHub repository is public. No secrets are in it, but making it private (Settings → Danger zone) keeps your setup to yourselves.
 
 ## Go-live checklist
 
@@ -56,6 +57,6 @@
 - [ ] All staff created with PINs; managers trained on approvals and cash-up
 - [ ] Offline drill: unplug the router during a test service, then confirm sales continue and sync
 - [ ] Staff have practised in training mode
-- [ ] Backups confirmed and a restore tested
+- [x] Nightly encrypted backups running; restore tested (16 Oct 2026)
 - [ ] Support contact and escalation plan agreed for the first week
 - [ ] First live day: watch the Z report and cash differences closely
