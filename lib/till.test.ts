@@ -168,6 +168,8 @@ describe("tillSettings", () => {
       kitchenTickets: false,
       paperWidth: 58,
       denominations: [10000, 5000, 2000, 1000, 500, 100, 25, 10, 5, 1],
+      offlineKitchenTickets: true,
+      offlineCardPayments: true,
     });
   });
 
@@ -183,6 +185,8 @@ describe("tillSettings", () => {
       kitchenTickets: false,
       paperWidth: 80,
       denominations: [10000, 5000, 2000, 1000, 500, 100, 25, 10, 5, 1],
+      offlineKitchenTickets: true,
+      offlineCardPayments: true,
     });
     expect(tillSettings(null, branch, "USD").autoLockMinutes).toBe(5);
   });

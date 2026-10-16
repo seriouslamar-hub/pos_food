@@ -12,9 +12,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useOffline, useOutboxDeps } from "@/lib/offline/context";
+import { readCache } from "@/lib/offline/db";
+import { findStaffByPin, type OfflineBundle } from "@/lib/offline/pin";
 import { PERMISSION_LABELS, type Permission } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/client";
 import {
+  isReadableError,
   isSessionEndedError,
   parseOverride,
   pinFailureMessage,
@@ -54,6 +58,8 @@ export function ManagerOverride({
 }: ManagerOverrideProps) {
   const fid = useFieldIds();
   const { session, lock } = useTillSession();
+  const { db, engine } = useOffline();
+  const deps = useOutboxDeps();
   const [supabase] = useState(createClient);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -69,8 +75,58 @@ export function ManagerOverride({
     onOpenChange(next);
   }
 
+  /** Offline: check the PIN on the till; the server records it later. */
+  async function approveOffline(pin: string) {
+    const bundle = await readCache<OfflineBundle>(db, "bundle");
+    if (!bundle) {
+      setError("The till is offline and hasn't kept anyone's PIN yet.");
+      return;
+    }
+    const approver = await findStaffByPin(
+      bundle.staff,
+      pin,
+      (s) => s.role === "admin" || s.permissions.includes(permission),
+    );
+    if (!approver) {
+      const someone = await findStaffByPin(bundle.staff, pin);
+      setError(
+        someone
+          ? "That PIN can't approve this. Ask a manager."
+          : "Wrong PIN. Try again.",
+      );
+      return;
+    }
+    const overrideId = crypto.randomUUID();
+    const reasonText = (givenReason ?? reason).trim();
+    await engine.enqueue({
+      id: overrideId,
+      kind: "record_offline_override",
+      args: {
+        p_override_id: overrideId,
+        p_session_id: session.sessionId,
+        p_approver_staff_id: approver.id,
+        p_permission: permission,
+        p_reason: reasonText || null,
+        p_approved_at: new Date().toISOString(),
+      },
+      label: `${approver.full_name} approved: ${actionLabel}`,
+      staffId: session.staff.id,
+      dependsOn: deps,
+    });
+    changeOpen(false);
+    onApproved({
+      ok: true,
+      overrideId,
+      approverName: approver.full_name,
+      expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+      offline: true,
+    });
+  }
+
   async function approve(pin: string) {
     setError(null);
+    if (session.offline || !engine.getState().online)
+      return approveOffline(pin);
     const { data, error: rpcError } = await supabase.rpc("verify_override", {
       p_session_id: session.sessionId,
       p_pin: pin,
@@ -82,8 +138,12 @@ export function ManagerOverride({
       lock("Your session ended. Sign in again.");
       return;
     }
+    if (rpcError && !isReadableError(rpcError)) {
+      engine.reportReachable(false);
+      return approveOffline(pin);
+    }
     if (rpcError) {
-      setError("Couldn't check the PIN. Check the connection and try again.");
+      setError("Couldn't check the PIN. Try again.");
       return;
     }
     const result = parseOverride(data);

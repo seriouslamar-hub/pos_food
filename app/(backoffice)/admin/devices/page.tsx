@@ -39,7 +39,7 @@ async function Devices() {
     supabase
       .from("devices")
       .select(
-        "id, branch_id, name, type, code, station, is_active, last_seen_at, auth_user_id",
+        "id, branch_id, name, type, code, station, is_active, last_seen_at, auth_user_id, pending_sync",
       )
       .order("code"),
     supabase.from("branches").select("id, name").order("name"),
@@ -107,6 +107,11 @@ async function Devices() {
                                   className={`size-2 rounded-full ${status.online ? "bg-green-600" : "bg-muted-foreground/40"}`}
                                 />
                                 {status.label}
+                                {d.pending_sync ? (
+                                  <Badge variant="destructive">
+                                    {d.pending_sync} not sent
+                                  </Badge>
+                                ) : null}
                               </span>
                             )}
                           </TableCell>

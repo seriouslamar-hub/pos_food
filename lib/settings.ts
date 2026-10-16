@@ -121,6 +121,20 @@ export const SETTINGS: SettingDefinition[] = [
     fallback: 80,
   },
   {
+    key: "offline.print_kitchen_tickets",
+    label: "Print kitchen tickets for sales made offline",
+    help: "The kitchen screen can't get orders while a till is offline, so the till prints them.",
+    kind: "boolean",
+    fallback: true,
+  },
+  {
+    key: "offline.card_payments",
+    label: "Take card and mobile money while offline",
+    help: "The cashier types the reference from the terminal or phone. When off, an offline till takes cash only.",
+    kind: "boolean",
+    fallback: true,
+  },
+  {
     key: "cash.variance_alert",
     label: "Highlight cash differences above",
     help: "Shifts whose counted cash is off by more than this stand out for the manager.",

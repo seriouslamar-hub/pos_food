@@ -76,6 +76,7 @@ export function OrderLookup({
   paymentMethods,
   paperWidth,
   onTakePayment,
+  disabled,
 }: {
   branchId: string;
   currency: string;
@@ -85,6 +86,8 @@ export function OrderLookup({
   paperWidth: PaperWidth;
   /** Opens the payment screen for an unpaid order; returns a problem or null. */
   onTakePayment: (orderId: string) => Promise<string | null>;
+  /** Needs the connection. */
+  disabled?: boolean;
 }) {
   const fid = useFieldIds();
   const { session, lock } = useTillSession();
@@ -161,6 +164,7 @@ export function OrderLookup({
         size="lg"
         variant="outline"
         className="h-12 px-4 text-base"
+        disabled={disabled}
         onClick={() => {
           setOpen(true);
           setOrder(null);

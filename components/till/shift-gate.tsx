@@ -14,8 +14,11 @@ import {
   type ShiftSummary,
   type TillState,
 } from "@/lib/shifts";
+import { OutboxDepsProvider, useOffline } from "@/lib/offline/context";
+import { readCache, writeCache, type TillDb } from "@/lib/offline/db";
 import { createClient } from "@/lib/supabase/client";
 import {
+  isReadableError,
   isSessionEndedError,
   rpcErrorMessage,
   type TillSettings,
@@ -30,7 +33,24 @@ type Branch = { name: string; currency_code: string; timezone: string };
 type GateState =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "ready"; till: TillState };
+  | { status: "ready"; till: TillState; offline: boolean };
+
+/**
+ * The day and this person's shift as last seen online, for working offline.
+ * Null when the till has never seen them.
+ */
+async function cachedTillState(
+  db: TillDb,
+  staffId: string,
+): Promise<TillState | null> {
+  const day = await readCache<{ day: DaySummary | null }>(db, "day");
+  if (!day) return null;
+  const shift = await readCache<{ shift: ShiftSummary | null }>(
+    db,
+    `shift:${staffId}`,
+  );
+  return { day: day.day, shift: shift?.shift ?? null };
+}
 
 /**
  * Selling needs an open business day and the cashier's own open shift on
@@ -47,6 +67,7 @@ export function ShiftGate({
   children: (shift: ShiftSummary, reload: () => void) => ReactNode;
 }) {
   const { session, lock } = useTillSession();
+  const { db, engine } = useOffline();
   const [supabase] = useState(createClient);
   const [state, setState] = useState<GateState>({ status: "loading" });
   const [zReport, setZReport] = useState<SalesReport | null>(null);
@@ -57,6 +78,25 @@ export function ShiftGate({
 
   useEffect(() => {
     let current = true;
+    const offline = () =>
+      void cachedTillState(db, session.staff.id).then((till) => {
+        if (!current) return;
+        setState(
+          till
+            ? { status: "ready", till, offline: true }
+            : {
+                status: "error",
+                message:
+                  "This till is offline and hasn't seen today's business day yet. Connect it to start.",
+              },
+        );
+      });
+    if (session.offline || !engine.getState().online) {
+      offline();
+      return () => {
+        current = false;
+      };
+    }
     void supabase
       .rpc("till_state", { p_session_id: session.sessionId })
       .then(({ data, error }) => {
@@ -65,16 +105,24 @@ export function ShiftGate({
           lock("Your session ended. Sign in again.");
           return;
         }
-        setState(
-          error
-            ? { status: "error", message: rpcErrorMessage(error) }
-            : { status: "ready", till: parseTillState(data) },
-        );
+        if (error && !isReadableError(error)) {
+          engine.reportReachable(false);
+          offline();
+          return;
+        }
+        if (error) {
+          setState({ status: "error", message: rpcErrorMessage(error) });
+          return;
+        }
+        const till = parseTillState(data);
+        void writeCache(db, "day", { day: till.day });
+        void writeCache(db, `shift:${session.staff.id}`, { shift: till.shift });
+        setState({ status: "ready", till, offline: false });
       });
     return () => {
       current = false;
     };
-  }, [supabase, session.sessionId, lock, version]);
+  }, [supabase, db, engine, session, lock, version]);
 
   let content: ReactNode;
   if (state.status === "loading") {
@@ -103,13 +151,21 @@ export function ShiftGate({
           The business day isn&apos;t open
         </h1>
         <p className="max-w-md text-lg text-muted-foreground">
-          A manager opens the day before anyone starts a shift.
+          {state.offline
+            ? "The till is offline. The day can be opened once the connection is back."
+            : "A manager opens the day before anyone starts a shift."}
         </p>
-        <DayControlButton
-          action="open"
-          onDone={reload}
-          className="w-full max-w-sm"
-        />
+        {state.offline ? (
+          <Button size="touch" onClick={reload}>
+            Check again
+          </Button>
+        ) : (
+          <DayControlButton
+            action="open"
+            onDone={reload}
+            className="w-full max-w-sm"
+          />
+        )}
       </Centered>
     );
   } else if (!state.till.shift) {
@@ -118,6 +174,7 @@ export function ShiftGate({
         day={state.till.day}
         branch={branch}
         settings={settings}
+        offline={state.offline}
         onOpened={reload}
         onDayClosed={(report) => {
           setZReport(report);
@@ -126,7 +183,17 @@ export function ShiftGate({
       />
     );
   } else {
-    content = children(state.till.shift, reload);
+    const deps = [
+      ...(session.offline ? [session.sessionId] : []),
+      ...(state.till.shift.outbox_item_id
+        ? [state.till.shift.outbox_item_id]
+        : []),
+    ];
+    content = (
+      <OutboxDepsProvider deps={deps}>
+        {children(state.till.shift, reload)}
+      </OutboxDepsProvider>
+    );
   }
 
   return (
@@ -156,16 +223,19 @@ function OpenShift({
   day,
   branch,
   settings,
+  offline,
   onOpened,
   onDayClosed,
 }: {
   day: DaySummary;
   branch: Branch;
   settings: TillSettings;
+  offline: boolean;
   onOpened: () => void;
   onDayClosed: (report: SalesReport) => void;
 }) {
   const { session, lock } = useTillSession();
+  const { db, engine, deviceCode } = useOffline();
   const [supabase] = useState(createClient);
   const [count, setCount] = useState<CashCount>({});
   const [busy, setBusy] = useState(false);
@@ -173,9 +243,49 @@ function OpenShift({
   const total = countTotal(count);
   const money = (amount: number) => formatAmount(amount, branch.currency_code);
 
+  /** Offline: the shift opens on the till and reaches the server later. */
+  async function openOffline() {
+    const itemId = crypto.randomUUID();
+    const openedAt = new Date().toISOString();
+    await engine.enqueue({
+      id: itemId,
+      kind: "open_shift",
+      args: {
+        p_session_id: session.sessionId,
+        p_opening_float: total,
+        p_denominations: toCountPayload(count),
+        p_opened_at: openedAt,
+      },
+      label: `${session.staff.fullName} opened a shift`,
+      staffId: session.staff.id,
+      dependsOn: session.offline ? [session.sessionId] : [],
+    });
+    const shift: ShiftSummary = {
+      id: itemId,
+      business_day_id: day.id,
+      business_date: day.business_date,
+      staff_id: session.staff.id,
+      staff_name: session.staff.fullName,
+      device_code: deviceCode,
+      status: "open",
+      opened_at: openedAt,
+      closed_at: null,
+      opening_float: total,
+      counted_cash: null,
+      outbox_item_id: itemId,
+    };
+    await writeCache(db, `shift:${session.staff.id}`, { shift });
+    onOpened();
+  }
+
   async function open() {
     setBusy(true);
     setError(null);
+    if (offline || !engine.canSendDirectly()) {
+      await openOffline();
+      setBusy(false);
+      return;
+    }
     const { error: rpcError } = await supabase.rpc("open_shift", {
       p_session_id: session.sessionId,
       p_opening_float: total,
@@ -184,6 +294,11 @@ function OpenShift({
     setBusy(false);
     if (isSessionEndedError(rpcError)) {
       lock("Your session ended. Sign in again.");
+      return;
+    }
+    if (rpcError && !isReadableError(rpcError)) {
+      engine.reportReachable(false);
+      await openOffline();
       return;
     }
     if (rpcError && rpcError.code !== DAY_NOT_OPEN_CODE) {
@@ -212,12 +327,14 @@ function OpenShift({
             .
           </p>
         </div>
-        <CloseDay
-          branch={branch}
-          denominations={settings.denominations}
-          paperWidth={settings.paperWidth}
-          onClosed={onDayClosed}
-        />
+        {offline ? null : (
+          <CloseDay
+            branch={branch}
+            denominations={settings.denominations}
+            paperWidth={settings.paperWidth}
+            onClosed={onDayClosed}
+          />
+        )}
       </div>
       <CashCountForm
         denominations={settings.denominations}

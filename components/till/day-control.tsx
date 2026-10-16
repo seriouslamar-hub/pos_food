@@ -16,6 +16,7 @@ import { formatInZone } from "@/lib/datetime";
 import { formatAmount } from "@/lib/money";
 import { getPrinterDriver, type PaperWidth } from "@/lib/printing";
 import { parseReport, type SalesReport, type ShiftSummary } from "@/lib/shifts";
+import { useSyncState } from "@/lib/offline/context";
 import { createClient } from "@/lib/supabase/client";
 import type { Json } from "@/lib/supabase/database.types";
 import { isSessionEndedError, rpcErrorMessage } from "@/lib/till";
@@ -120,6 +121,8 @@ export function CloseDay({
   const { session, lock } = useTillSession();
   const [supabase] = useState(createClient);
   const canReconcile = usePermission("shift.reconcile");
+  const sync = useSyncState();
+  const unsent = sync.pending + sync.failed;
   const [open, setOpen] = useState(false);
   const [shifts, setShifts] = useState<ShiftSummary[] | null>(null);
   const [counting, setCounting] = useState<ShiftSummary | null>(null);
@@ -283,20 +286,34 @@ export function CloseDay({
                   ))}
                 </ul>
               ) : null}
-              <DayControlButton
-                action="close"
-                onDone={(result) => {
-                  const report = parseReport(
-                    (result as { z_report?: unknown } | null)?.z_report,
-                  );
-                  void getPrinterDriver().print(
-                    [{ kind: "report", report }],
-                    paperWidth,
-                  );
-                  setOpen(false);
-                  onClosed(report);
-                }}
-              />
+              {unsent ? (
+                <Alert variant="destructive" aria-live="polite">
+                  <AlertDescription
+                    className="text-base"
+                    data-testid="unsent-block"
+                  >
+                    This till still has{" "}
+                    {unsent === 1 ? "1 item" : `${unsent} items`} to send.
+                    Closing the day waits until everything is sent (see the sync
+                    status at the top).
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <DayControlButton
+                  action="close"
+                  onDone={(result) => {
+                    const report = parseReport(
+                      (result as { z_report?: unknown } | null)?.z_report,
+                    );
+                    void getPrinterDriver().print(
+                      [{ kind: "report", report }],
+                      paperWidth,
+                    );
+                    setOpen(false);
+                    onClosed(report);
+                  }}
+                />
+              )}
             </>
           )}
         </DialogContent>

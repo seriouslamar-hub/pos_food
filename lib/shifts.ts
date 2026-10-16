@@ -35,6 +35,8 @@ export type ShiftSummary = {
   closed_at: string | null;
   opening_float: number;
   counted_cash: number | null;
+  /** Opened while offline: its open_shift is still in the outbox. */
+  outbox_item_id?: string;
 };
 
 export type ShiftCash = {

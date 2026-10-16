@@ -6,13 +6,29 @@ import { PinKeypad } from "@/components/pin-keypad";
 import { PrintHost } from "@/components/print-host";
 import { OrderScreen } from "@/components/till/order-screen";
 import { ShiftGate } from "@/components/till/shift-gate";
+import { SyncBadge } from "@/components/till/sync-status";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  OfflineProvider,
+  useOffline,
+  useSyncState,
+} from "@/lib/offline/context";
+import { raiseOfflineCounter, readCache, writeCache } from "@/lib/offline/db";
+import {
+  findStaffByPin,
+  OfflineLockout,
+  parseOfflineBundle,
+  type OfflineBundle,
+} from "@/lib/offline/pin";
+import { can } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/client";
 import {
+  isReadableError,
   parseStartSession,
   pinFailureMessage,
+  type StaffRole,
   type TillSession,
   type TillSettings,
 } from "@/lib/till";
@@ -30,7 +46,17 @@ type TillAppProps = {
   settings: TillSettings;
 };
 
-export function TillApp({
+export function TillApp(props: TillAppProps) {
+  return (
+    <OfflineProvider deviceId={props.deviceId} deviceCode={props.deviceCode}>
+      <TillShell {...props} />
+    </OfflineProvider>
+  );
+}
+
+const TEN_MINUTES = 10 * 60_000;
+
+function TillShell({
   branchId,
   deviceId,
   deviceName,
@@ -42,29 +68,59 @@ export function TillApp({
 }: TillAppProps) {
   const { autoLockMinutes } = settings;
   const [supabase] = useState(createClient);
+  const { db, engine } = useOffline();
+  const sync = useSyncState();
   const [session, setSession] = useState<TillSession | null>(null);
   const [lockNotice, setLockNotice] = useState<string | null>(null);
   const sessionIdRef = useRef<string | null>(null);
 
+  const offlineRef = useRef(false);
   useEffect(() => {
     sessionIdRef.current = session?.sessionId ?? null;
+    offlineRef.current = session?.offline ?? false;
   }, [session]);
 
-  // Tell head office this till is online (shown on the admin devices page).
+  // Tell head office this till is online and how much it still has to send
+  // (shown on the admin devices page).
+  const pending = sync.pending + sync.failed;
   useEffect(() => {
-    const beat = () => void supabase.rpc("device_heartbeat");
+    const beat = () =>
+      void supabase.rpc("device_heartbeat", { p_pending: pending });
     beat();
     const timer = setInterval(beat, 60_000);
     return () => clearInterval(timer);
-  }, [supabase]);
+  }, [supabase, pending]);
+
+  // Keep who can sign in (with PIN hashes) for signing in offline: on start,
+  // when the connection comes back, and every ten minutes.
+  useEffect(() => {
+    if (!sync.online) return;
+    const refresh = () =>
+      void supabase.rpc("get_offline_bundle").then(({ data, error }) => {
+        const bundle = error ? null : parseOfflineBundle(data);
+        if (!bundle) return;
+        void writeCache(db, "bundle", bundle);
+        if (bundle.offline_numbers)
+          void raiseOfflineCounter(
+            db,
+            bundle.offline_numbers.business_date,
+            bundle.offline_numbers.last,
+          );
+      });
+    refresh();
+    const timer = setInterval(refresh, TEN_MINUTES);
+    return () => clearInterval(timer);
+  }, [supabase, db, sync.online]);
 
   const lock = useCallback(
     (reason?: string) => {
       const sessionId = sessionIdRef.current;
       if (sessionId) {
         sessionIdRef.current = null;
-        // Best effort: the next PIN sign-in ends it anyway.
-        void supabase.rpc("end_pos_session", { p_session_id: sessionId });
+        // Best effort: the next PIN sign-in ends it anyway. (Offline
+        // sessions are never open on the server.)
+        if (!offlineRef.current)
+          void supabase.rpc("end_pos_session", { p_session_id: sessionId });
       }
       setSession(null);
       setLockNotice(reason ?? null);
@@ -85,9 +141,16 @@ export function TillApp({
         <span className="font-semibold">
           {branchName} · {deviceName} ({deviceCode})
         </span>
-        {session ? (
-          <SignedInBar session={session} onSwitch={() => lock()} />
-        ) : null}
+        <div className="flex items-center gap-3">
+          <SyncBadge
+            canDiscard={
+              session !== null && can(session.permissions, "shift.reconcile")
+            }
+          />
+          {session ? (
+            <SignedInBar session={session} onSwitch={() => lock()} />
+          ) : null}
+        </div>
       </header>
 
       {session ? (
@@ -113,6 +176,42 @@ export function TillApp({
           onUnlocked={(next) => {
             setLockNotice(null);
             setSession(next);
+          }}
+          offlineSignIn={async (pin) => {
+            const bundle = await readCache<OfflineBundle>(db, "bundle");
+            if (!bundle) return { error: "offline_unavailable" as const };
+            const person = await findStaffByPin(
+              bundle.staff,
+              pin,
+              (s) =>
+                s.permissions.includes("order.create") || s.role === "admin",
+            );
+            if (!person) return { error: "invalid_pin" as const };
+            const sessionId = crypto.randomUUID();
+            await engine.enqueue({
+              id: sessionId,
+              kind: "start_offline_session",
+              args: {
+                p_session_id: sessionId,
+                p_staff_id: person.id,
+                p_started_at: new Date().toISOString(),
+              },
+              label: `${person.full_name} signed in offline`,
+              staffId: person.id,
+            });
+            return {
+              session: {
+                sessionId,
+                offline: true,
+                staff: {
+                  id: person.id,
+                  fullName: person.full_name,
+                  role: person.role as StaffRole,
+                  discountLimitBps: person.discount_limit_bps,
+                },
+                permissions: person.permissions,
+              },
+            };
           }}
         />
       )}
@@ -149,16 +248,26 @@ function SignedInBar({
   );
 }
 
+type OfflineSignIn = (
+  pin: string,
+) => Promise<
+  { session: TillSession } | { error: "invalid_pin" | "offline_unavailable" }
+>;
+
 function LockScreen({
   notice,
   onUnlocked,
+  offlineSignIn,
 }: {
   notice: string | null;
   onUnlocked: (session: TillSession) => void;
+  offlineSignIn: OfflineSignIn;
 }) {
   const [supabase] = useState(createClient);
+  const { engine } = useOffline();
   const [error, setError] = useState<string | null>(null);
   const [lockedFor, setLockedFor] = useState(0);
+  const [lockout] = useState(() => new OfflineLockout());
 
   // Count down a lockout, then let the cashier try again.
   useEffect(() => {
@@ -167,15 +276,47 @@ function LockScreen({
     return () => clearTimeout(timer);
   }, [lockedFor]);
 
+  /** No connection: check the PIN against the hashes kept on the till. */
+  async function signInOffline(pin: string) {
+    const now = Date.now();
+    const wait = lockout.lockedFor(now);
+    if (wait) {
+      setLockedFor(wait);
+      return;
+    }
+    const result = await offlineSignIn(pin);
+    if ("session" in result) {
+      lockout.succeed();
+      onUnlocked(result.session);
+      return;
+    }
+    if (result.error === "offline_unavailable") {
+      setError(
+        "This till is offline and hasn't kept anyone's PIN yet. Connect it once first.",
+      );
+      return;
+    }
+    lockout.fail(now);
+    const locked = lockout.lockedFor(now);
+    if (locked) setLockedFor(locked);
+    else setError("Wrong PIN. Try again.");
+  }
+
   async function signIn(pin: string) {
     setError(null);
+    if (!engine.getState().online) return signInOffline(pin);
     const { data, error: rpcError } = await supabase.rpc("start_pos_session", {
       p_pin: pin,
     });
+    if (rpcError && !isReadableError(rpcError)) {
+      engine.reportReachable(false);
+      return signInOffline(pin);
+    }
     if (rpcError) {
-      setError("Couldn't check the PIN. Check the connection and try again.");
+      setError("Couldn't check the PIN. Try again.");
       return;
     }
+    engine.reportReachable(true);
     const result = parseStartSession(data);
     if (!result.ok) {
       setError(pinFailureMessage(result));

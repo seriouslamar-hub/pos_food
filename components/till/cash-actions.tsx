@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { countTotal, toCountPayload, type CashCount } from "@/lib/cash";
 import { formatAmount, parseMoney } from "@/lib/money";
+import { useOffline, useOutboxDeps, useSyncState } from "@/lib/offline/context";
 import { getPrinterDriver } from "@/lib/printing";
 import {
   CASH_MOVEMENTS,
@@ -25,6 +26,7 @@ import {
 } from "@/lib/shifts";
 import { createClient } from "@/lib/supabase/client";
 import {
+  isReadableError,
   isSessionEndedError,
   rpcErrorMessage,
   type TillSettings,
@@ -62,6 +64,10 @@ export function CashActions({
   const [supabase] = useState(createClient);
   const canXReport = usePermission("reports.own_shift");
   const canClose = usePermission("shift.close_own");
+  const sync = useSyncState();
+  // The shift's figures live on the server: everything must be sent first.
+  const allSent =
+    sync.online && sync.pending === 0 && sync.failed === 0 && !session.offline;
   const [menuOpen, setMenuOpen] = useState(false);
   const [movement, setMovement] = useState<CashMovementType | null>(null);
   const [report, setReport] = useState<SalesReport | null>(null);
@@ -113,6 +119,9 @@ export function CashActions({
             <DialogTitle className="text-xl">Cash</DialogTitle>
             <DialogDescription>
               {shift.staff_name}&apos;s shift on till {shift.device_code}.
+              {allSent
+                ? ""
+                : " The X report and closing the shift wait until the till is online and everything is sent."}
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-2">
@@ -134,7 +143,7 @@ export function CashActions({
               variant="outline"
               size="touch"
               className="h-16"
-              disabled={!canXReport}
+              disabled={!canXReport || !allSent}
               onClick={() => {
                 setMenuOpen(false);
                 void showXReport();
@@ -145,7 +154,7 @@ export function CashActions({
             <Button
               size="touch"
               className="h-16"
-              disabled={!canClose}
+              disabled={!canClose || !allSent}
               onClick={() => {
                 setMenuOpen(false);
                 setClosing(true);
@@ -200,6 +209,8 @@ function CashMovementDialog({
 }) {
   const fid = useFieldIds();
   const { session, lock } = useTillSession();
+  const { engine } = useOffline();
+  const outboxDeps = useOutboxDeps();
   const [supabase] = useState(createClient);
   const info = CASH_MOVEMENTS[type];
   const allowed = usePermission(info.permission);
@@ -237,35 +248,72 @@ function CashMovementDialog({
     else setApprovalOpen(true);
   }
 
-  async function record(value: number, overrideId?: string, approver?: string) {
+  async function record(
+    value: number,
+    approval?: { overrideId: string; approverName: string; offline?: boolean },
+  ) {
     setBusy(true);
     setError(null);
-    const { error: rpcError } = await supabase.rpc("record_cash_movement", {
+    const args = {
       p_session_id: session.sessionId,
       p_movement: {
         id,
         type,
         amount: value,
         reason: reason.trim() || null,
-        override_id: overrideId ?? null,
+        override_id: approval?.overrideId ?? null,
         client_created_at: new Date().toISOString(),
       },
-    });
+    };
+    let queued = session.offline === true || !engine.canSendDirectly();
+    if (!queued) {
+      const { error: rpcError } = await supabase.rpc(
+        "record_cash_movement",
+        args,
+      );
+      if (isSessionEndedError(rpcError)) {
+        setBusy(false);
+        lock("Your session ended. Sign in again.");
+        return;
+      }
+      if (rpcError && isReadableError(rpcError)) {
+        setBusy(false);
+        setError(rpcErrorMessage(rpcError));
+        return;
+      }
+      // Couldn't reach the server: keep it for later (same id, so it can't
+      // be recorded twice).
+      if (rpcError) {
+        engine.reportReachable(false);
+        queued = true;
+      }
+    }
+    if (queued) {
+      await engine.enqueue({
+        id,
+        kind: "record_cash_movement",
+        args,
+        label:
+          type === "no_sale"
+            ? "No sale"
+            : `${info.label} of ${formatAmount(value, currency)}`,
+        staffId: session.staff.id,
+        dependsOn: [
+          ...outboxDeps,
+          ...(approval?.offline ? [approval.overrideId] : []),
+        ],
+      });
+    }
     setBusy(false);
-    if (isSessionEndedError(rpcError)) {
-      lock("Your session ended. Sign in again.");
-      return;
-    }
-    if (rpcError) {
-      setError(rpcErrorMessage(rpcError));
-      return;
-    }
     void getPrinterDriver().openDrawer();
-    const approved = approver ? `, approved by ${approver}` : "";
+    const approved = approval ? `, approved by ${approval.approverName}` : "";
+    const later = queued
+      ? " It will be sent when the till is back online."
+      : "";
     onDone(
       type === "no_sale"
-        ? `No sale recorded${approved}. The drawer is open.`
-        : `${info.label} of ${formatAmount(value, currency)} recorded${approved}.`,
+        ? `No sale recorded${approved}. The drawer is open.${later}`
+        : `${info.label} of ${formatAmount(value, currency)} recorded${approved}.${later}`,
     );
   }
 
@@ -321,8 +369,7 @@ function CashMovementDialog({
           reason={reason.trim()}
           onApproved={(approval) => {
             const value = amount();
-            if (value !== null)
-              void record(value, approval.overrideId, approval.approverName);
+            if (value !== null) void record(value, approval);
           }}
         />
       </DialogContent>

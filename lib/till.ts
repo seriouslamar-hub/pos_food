@@ -18,6 +18,11 @@ export type TillSession = {
   sessionId: string;
   staff: TillStaff;
   permissions: string[];
+  /**
+   * Signed in with the PIN checked on the till while offline. The session is
+   * registered through the outbox (an item with the session's id).
+   */
+  offline?: boolean;
 };
 
 export type PinFailure = {
@@ -31,6 +36,11 @@ export type OverrideApproval = {
   overrideId: string;
   approverName: string;
   expiresAt: string;
+  /**
+   * Checked on the till while offline. The approval is in the outbox (an
+   * item with the override's id): what it approves must follow it there.
+   */
+  offline?: boolean;
 };
 
 /** SQLSTATE raised when a till session has ended (see the Phase 2 migration). */
@@ -148,6 +158,8 @@ export const TILL_SETTING_KEYS = [
   "print.kitchen_tickets",
   "receipt.paper_width_mm",
   "cash.denominations",
+  "offline.print_kitchen_tickets",
+  "offline.card_payments",
 ] as const;
 
 export type TillSettings = {
@@ -158,6 +170,10 @@ export type TillSettings = {
   paperWidth: PaperWidth;
   /** Notes and coins to count, largest first, in minor units. */
   denominations: number[];
+  /** Print a kitchen ticket for every sale made offline. */
+  offlineKitchenTickets: boolean;
+  /** Card and mobile money offline (with a typed reference). */
+  offlineCardPayments: boolean;
 };
 
 export function tillSettings(
@@ -174,5 +190,7 @@ export function tillSettings(
     kitchenTickets: value("print.kitchen_tickets") === true,
     paperWidth: toPaperWidth(value("receipt.paper_width_mm")),
     denominations: denominationsFor(rows, branchId, currency),
+    offlineKitchenTickets: value("offline.print_kitchen_tickets") === true,
+    offlineCardPayments: value("offline.card_payments") === true,
   };
 }

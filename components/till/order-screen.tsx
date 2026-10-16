@@ -25,7 +25,7 @@ import {
 } from "@/lib/cart";
 import { loadHeld, saveHeld, type HeldOrder } from "@/lib/held-orders";
 import { loadLastReceipt, saveLastReceipt } from "@/lib/last-receipt";
-import { canSell, indexMenu, type MenuItem } from "@/lib/menu";
+import { canSell, indexMenu, type MenuDoc, type MenuItem } from "@/lib/menu";
 import { formatAmount } from "@/lib/money";
 import { parseOrderSummary, type OrderSummary } from "@/lib/orders";
 import {
@@ -43,10 +43,14 @@ import {
   isReadableError,
   isSessionEndedError,
   rpcErrorMessage,
+  type OverrideApproval,
   type TillSettings,
 } from "@/lib/till";
 import { useTillSession } from "@/lib/till-session";
 import { useLiveMenu } from "@/lib/use-live-menu";
+import { useOffline, useOutboxDeps, useSyncState } from "@/lib/offline/context";
+import { nextOfflineNumber, readCache, writeCache } from "@/lib/offline/db";
+import { localOrderSummary } from "@/lib/offline/local-order";
 import { CartPanel } from "./cart-panel";
 import { CashActions } from "./cash-actions";
 import { LineOptionsDialog, OrderDiscountDialog } from "./discount-dialogs";
@@ -77,7 +81,13 @@ type Checkout = {
   unsure: boolean;
   /** Saving the payments was tried and failed. */
   paymentTried: boolean;
+  /** Managers' approvals for the cart's discounts and price changes. */
+  approvals: Approvals;
+  /** Approvals given offline: in the outbox, and needed first. */
+  approvalDeps: string[];
 };
+
+type Approvals = { discountOverrideId?: string; priceOverrideId?: string };
 
 type OrderNoticeState = { order: OrderSummary; message: string };
 
@@ -99,7 +109,19 @@ export function OrderScreen({
 }) {
   const { session, lock } = useTillSession();
   const [supabase] = useState(createClient);
-  const { menu, error: menuError } = useLiveMenu(branchId);
+  const { db, engine, deviceCode } = useOffline();
+  const outboxDeps = useOutboxDeps();
+  const sync = useSyncState();
+  // Offline: sales finish on the till and wait in the outbox.
+  const offline = session.offline === true || !sync.online;
+  const menuCache = useMemo(
+    () => ({
+      load: () => readCache<MenuDoc>(db, "menu"),
+      save: (doc: MenuDoc) => void writeCache(db, "menu", doc),
+    }),
+    [db],
+  );
+  const { menu, error: menuError } = useLiveMenu(branchId, null, menuCache);
   const index = useMemo(() => (menu ? indexMenu(menu) : null), [menu]);
 
   const [cart, setCart] = useState<Cart>(() => emptyCart(newId()));
@@ -126,9 +148,9 @@ export function OrderScreen({
     permission: Permission;
     actionLabel: string;
   } | null>(null);
-  const approvalWaiter = useRef<((overrideId: string | null) => void) | null>(
-    null,
-  );
+  const approvalWaiter = useRef<
+    ((approval: OverrideApproval | null) => void) | null
+  >(null);
 
   const totals = useMemo(
     () => (menu && index ? priceCart(cart, menu, index) : null),
@@ -218,7 +240,7 @@ export function OrderScreen({
   function askApproval(
     permission: Permission,
     actionLabel: string,
-  ): Promise<string | null> {
+  ): Promise<OverrideApproval | null> {
     return new Promise((resolve) => {
       approvalWaiter.current = resolve;
       setApproval({ permission, actionLabel });
@@ -247,7 +269,80 @@ export function OrderScreen({
     setCart((c) => (c.id === orderId ? emptyCart(freshId, c.orderType) : c));
   }
 
-  function finishSale(order: OrderSummary, kitchenTicketPrinted: boolean) {
+  /** Whether writes must go through the outbox right now. */
+  function mustQueue(): boolean {
+    return session.offline === true || !engine.canSendDirectly();
+  }
+
+  /**
+   * Finishes a sale on the till: the order and its payments wait in the
+   * outbox (the payments after the order), with the till's own number, and
+   * the receipt prints from what the till worked out.
+   */
+  async function completeOffline(
+    current: Checkout,
+    payments: PendingPayment[],
+  ) {
+    if (!current.cart || !menu || !index) return;
+    const cart = current.cart;
+    const totals = priceCart(cart, menu, index);
+    const number = await nextOfflineNumber(db, deviceCode, shift.business_date);
+    const now = new Date().toISOString();
+    const orderItem = `order:${cart.id}`;
+    await engine.enqueue({
+      id: orderItem,
+      kind: "submit_order",
+      args: {
+        p_session_id: session.sessionId,
+        p_order: {
+          ...toSubmitPayload(cart, newId, now, current.approvals),
+          is_offline: true,
+          offline_number: number,
+        },
+      },
+      label: `Order ${number}`,
+      staffId: session.staff.id,
+      dependsOn: [...outboxDeps, ...current.approvalDeps],
+    });
+    await engine.enqueue({
+      id: `payments:${cart.id}`,
+      kind: "record_payments",
+      args: {
+        p_session_id: session.sessionId,
+        p_order_id: cart.id,
+        p_payments: toRecordPayments(payments, now),
+      },
+      label: `Payment for order ${number}`,
+      staffId: session.staff.id,
+      dependsOn: [orderItem],
+    });
+    finishSale(
+      localOrderSummary({
+        cart,
+        menu,
+        index,
+        totals,
+        payments,
+        orderNumber: number,
+        businessDate: shift.business_date,
+        staff: { id: session.staff.id, fullName: session.staff.fullName },
+        deviceCode,
+        branch:
+          lastReceipt?.branch.currency_code === menu.currency_code
+            ? lastReceipt.branch
+            : null,
+        now,
+      }),
+      false,
+      true,
+    );
+  }
+
+  function finishSale(
+    order: OrderSummary,
+    kitchenTicketPrinted: boolean,
+    offlineSale = false,
+  ) {
     setCheckout(null);
     setCheckoutError(null);
     clearSavedCart(order.id);
@@ -257,7 +352,12 @@ export function OrderScreen({
     if (order.payments.some((p) => p.method === "cash"))
       void printer.openDrawer();
     const jobs: PrintJob[] = [];
-    if (settings.kitchenTickets && !kitchenTicketPrinted)
+    // Offline, the kitchen screen can't get the order: print it.
+    if (
+      (settings.kitchenTickets ||
+        (offlineSale && settings.offlineKitchenTickets)) &&
+      !kitchenTicketPrinted
+    )
       jobs.push({ kind: "kitchen", order });
     if (settings.autoPrintReceipt) jobs.push({ kind: "receipt", order });
     print(jobs);
@@ -280,6 +380,8 @@ export function OrderScreen({
       fromCart: true,
       unsure: false,
       paymentTried: false,
+      approvals: {},
+      approvalDeps: [],
     });
   }
 
@@ -290,26 +392,43 @@ export function OrderScreen({
   async function chargeAdjusted() {
     if (!totals || working.current) return;
     const current = cart;
-    const approvals: { discountOverrideId?: string; priceOverrideId?: string } =
-      {};
+    const approvals: Approvals = {};
+    const approvalDeps: string[] = [];
     if (
       current.lines.some((l) => l.price) &&
       !can(session.permissions, "price.override")
     ) {
-      const id = await askApproval("price.override", "Changing a price");
-      if (!id) return;
-      approvals.priceOverrideId = id;
+      const granted = await askApproval("price.override", "Changing a price");
+      if (!granted) return;
+      approvals.priceOverrideId = granted.overrideId;
+      if (granted.offline) approvalDeps.push(granted.overrideId);
     }
     if (
       overDiscountLimit(totals, session.staff.discountLimitBps) &&
       !can(session.permissions, "discount.override")
     ) {
-      const id = await askApproval(
+      const granted = await askApproval(
         "discount.override",
         "A discount above your limit",
       );
-      if (!id) return;
-      approvals.discountOverrideId = id;
+      if (!granted) return;
+      approvals.discountOverrideId = granted.overrideId;
+      if (granted.offline) approvalDeps.push(granted.overrideId);
+    }
+    if (mustQueue()) {
+      // Offline: take payment now; it all reaches the server later.
+      setCheckout({
+        cart: current,
+        order: null,
+        total: totals.total,
+        notice: null,
+        fromCart: true,
+        unsure: false,
+        paymentTried: false,
+        approvals,
+        approvalDeps,
+      });
+      return;
     }
 
     working.current = true;
@@ -331,6 +450,8 @@ export function OrderScreen({
         fromCart: true,
         unsure: false,
         paymentTried: false,
+        approvals: {},
+        approvalDeps: [],
       });
     } finally {
       working.current = false;
@@ -347,11 +468,22 @@ export function OrderScreen({
     setBusy(true);
     setCheckoutError(null);
     try {
+      if (!current.order && current.cart && mustQueue()) {
+        await completeOffline(current, payments);
+        return;
+      }
       let order = current.order;
       if (!order && current.cart) {
         const saved = await saveCart(current.cart);
         if ("error" in saved) {
           if (sessionEnded(saved.error)) return;
+          if (!isReadableError(saved.error)) {
+            // The connection dropped: finish on the till. Same order and
+            // payment ids, so nothing happens twice if it did get through.
+            engine.reportReachable(false);
+            await completeOffline(current, payments);
+            return;
+          }
           const unsure = !isReadableError(saved.error);
           setCheckout({ ...current, unsure: current.unsure || unsure });
           setCheckoutError(rpcErrorMessage(saved.error));
@@ -388,6 +520,15 @@ export function OrderScreen({
       });
       if (rpcError) {
         if (sessionEnded(rpcError)) return;
+        if (
+          !isReadableError(rpcError) &&
+          current.cart &&
+          rpcError.code !== "23505"
+        ) {
+          engine.reportReachable(false);
+          await completeOffline(current, payments);
+          return;
+        }
         if (rpcError.code === "23505") {
           // Different payments were saved for this order on an earlier try.
           const saved = await lookUpOrder(order.id);
@@ -518,6 +659,8 @@ export function OrderScreen({
       fromCart: false,
       unsure: false,
       paymentTried: false,
+      approvals: {},
+      approvalDeps: [],
     });
     return null;
   }
@@ -551,12 +694,13 @@ export function OrderScreen({
             paymentMethods={menu.payment_methods}
             paperWidth={settings.paperWidth}
             onTakePayment={payUnpaid}
+            disabled={offline}
           />
           <UnpaidOrders
             branchId={branchId}
             currency={menu.currency_code}
             timezone={menu.timezone}
-            disabled={busy}
+            disabled={busy || offline}
             onPay={payUnpaid}
           />
           <Button
@@ -621,7 +765,9 @@ export function OrderScreen({
         }}
         onCharge={charge}
         onSendToKitchen={
-          settings.payLaterDineIn ? () => void sendToKitchen() : undefined
+          settings.payLaterDineIn && !offline
+            ? () => void sendToKitchen()
+            : undefined
         }
         onLineOptions={setLineOptions}
         onOrderDiscount={() => setOrderDiscountOpen(true)}
@@ -671,7 +817,7 @@ export function OrderScreen({
           const waiter = approvalWaiter.current;
           approvalWaiter.current = null;
           setApproval(null);
-          waiter?.(granted.overrideId);
+          waiter?.(granted);
         }}
       />
 
@@ -685,7 +831,18 @@ export function OrderScreen({
           }
           total={checkout.total}
           currency={menu.currency_code}
-          methods={menu.payment_methods}
+          methods={
+            offline
+              ? menu.payment_methods
+                  .filter(
+                    (m) => m.type === "cash" || settings.offlineCardPayments,
+                  )
+                  // No terminal check offline: always type the reference.
+                  .map((m) =>
+                    m.type === "cash" ? m : { ...m, requires_reference: true },
+                  )
+              : menu.payment_methods
+          }
           notice={checkout.notice}
           busy={busy}
           error={checkoutError}

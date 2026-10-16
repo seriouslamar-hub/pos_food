@@ -508,6 +508,8 @@ export type Database = {
           is_active: boolean
           last_seen_at: string | null
           name: string
+          pending_sync: number | null
+          pending_sync_at: string | null
           station: string | null
           type: Database["public"]["Enums"]["device_type"]
           updated_at: string
@@ -521,6 +523,8 @@ export type Database = {
           is_active?: boolean
           last_seen_at?: string | null
           name: string
+          pending_sync?: number | null
+          pending_sync_at?: string | null
           station?: string | null
           type: Database["public"]["Enums"]["device_type"]
           updated_at?: string
@@ -534,6 +538,8 @@ export type Database = {
           is_active?: boolean
           last_seen_at?: string | null
           name?: string
+          pending_sync?: number | null
+          pending_sync_at?: string | null
           station?: string | null
           type?: Database["public"]["Enums"]["device_type"]
           updated_at?: string
@@ -971,6 +977,7 @@ export type Database = {
           id: string
           is_offline: boolean
           notes: string | null
+          offline_difference: number | null
           order_number: string
           order_type: Database["public"]["Enums"]["order_type"]
           paid_at: string | null
@@ -1002,6 +1009,7 @@ export type Database = {
           id: string
           is_offline?: boolean
           notes?: string | null
+          offline_difference?: number | null
           order_number: string
           order_type?: Database["public"]["Enums"]["order_type"]
           paid_at?: string | null
@@ -1033,6 +1041,7 @@ export type Database = {
           id?: string
           is_offline?: boolean
           notes?: string | null
+          offline_difference?: number | null
           order_number?: string
           order_type?: Database["public"]["Enums"]["order_type"]
           paid_at?: string | null
@@ -1338,6 +1347,7 @@ export type Database = {
           device_id: string
           ended_at: string | null
           id: string
+          is_offline: boolean
           staff_id: string
           started_at: string
         }
@@ -1346,6 +1356,7 @@ export type Database = {
           device_id: string
           ended_at?: string | null
           id?: string
+          is_offline?: boolean
           staff_id: string
           started_at?: string
         }
@@ -1354,6 +1365,7 @@ export type Database = {
           device_id?: string
           ended_at?: string | null
           id?: string
+          is_offline?: boolean
           staff_id?: string
           started_at?: string
         }
@@ -1808,6 +1820,8 @@ export type Database = {
           is_active: boolean
           last_seen_at: string | null
           name: string
+          pending_sync: number | null
+          pending_sync_at: string | null
           station: string | null
           type: Database["public"]["Enums"]["device_type"]
           updated_at: string
@@ -1863,7 +1877,7 @@ export type Database = {
         }[]
       }
       day_report: { Args: { p_day_id: string }; Returns: Json }
-      device_heartbeat: { Args: never; Returns: undefined }
+      device_heartbeat: { Args: { p_pending?: number }; Returns: undefined }
       discount_amount: {
         Args: { p_amount: number; p_discount: Json }
         Returns: number
@@ -1875,6 +1889,7 @@ export type Database = {
       }
       get_day_report: { Args: { p_day_id: string }; Returns: Json }
       get_menu: { Args: { p_branch_id: string }; Returns: Json }
+      get_offline_bundle: { Args: never; Returns: Json }
       get_order: { Args: { p_order_id: string }; Returns: Json }
       has_permission: { Args: { p_permission: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
@@ -1897,6 +1912,7 @@ export type Database = {
       open_shift: {
         Args: {
           p_denominations?: Json
+          p_opened_at?: string
           p_opening_float: number
           p_session_id: string
         }
@@ -1922,6 +1938,17 @@ export type Database = {
       pin_lockout_seconds: { Args: { p_device_id: string }; Returns: number }
       record_cash_movement: {
         Args: { p_movement: Json; p_session_id: string }
+        Returns: Json
+      }
+      record_offline_override: {
+        Args: {
+          p_approved_at?: string
+          p_approver_staff_id: string
+          p_override_id: string
+          p_permission: string
+          p_reason?: string
+          p_session_id: string
+        }
         Returns: Json
       }
       record_payments: {
@@ -1977,6 +2004,7 @@ export type Database = {
           device_id: string
           ended_at: string | null
           id: string
+          is_offline: boolean
           staff_id: string
           started_at: string
         }
@@ -2051,6 +2079,10 @@ export type Database = {
         Returns: boolean
       }
       staff_permissions: { Args: { p_staff_id: string }; Returns: string[] }
+      start_offline_session: {
+        Args: { p_session_id: string; p_staff_id: string; p_started_at: string }
+        Returns: Json
+      }
       start_pos_session: { Args: { p_pin: string }; Returns: Json }
       submit_order: {
         Args: { p_order: Json; p_session_id: string }

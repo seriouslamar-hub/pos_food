@@ -151,6 +151,16 @@ Add these secrets in GitHub → your repo → Settings → Secrets and variables
 - **Orders** on the till finds an order by number, amount or payment reference. From there: reprint the receipt, **refund** a paid order (all of it or some items, back by cash or another method; needs `order.refund` or a manager's PIN), or **void items** on an unpaid one (your own unsent items freely; anything the kitchen has, or someone else's order, needs `order.void_sent` or a manager's PIN). Refunded items the kitchen hasn't made are stopped too. A cash refund comes out of the refunding till's expected cash.
 - **Back office:** **Orders** shows any order with its history (who took, discounted, voided, refunded or approved what), and **Exceptions** lists voids, refunds, discounts, price changes and no-sales by day and cashier, with totals.
 
+### Offline mode
+
+A till keeps selling when the internet drops, and sends everything once the connection is back.
+
+- **What works offline:** PIN sign-in (checked against PIN hashes the till keeps, refreshed every ten minutes while online; five wrong PINs still lock it for a minute), opening a shift, selling with discounts and manager approvals, cash and (if `offline.card_payments` is on) card or mobile money with a typed reference, receipts, reprints, and cash drops, paid in/out and no-sales. Offline sales get the till's own numbers (`T1-042`) and print a kitchen ticket (`offline.print_kitchen_tickets`), since the kitchen screen can't receive them.
+- **What waits for the connection:** opening and closing the business day, closing a shift and the X report (both also wait until everything is sent), refunds, voids, order lookup and unpaid orders.
+- **How it syncs:** every write goes to an outbox in the browser (IndexedDB, `lib/offline`) and is sent in order, with exponential backoff while the server can't be reached. Every write has an id made on the till and the server ignores repeats, so a sale reaches the server exactly once, even if the connection drops mid-send. The badge at the top of the till shows what's waiting; tap it for the **Sync status** (retry, and for managers, discard). The admin **Devices** page shows tills with unsent work.
+- **Prices:** an offline sale is charged at the till's prices. If the menu changed meanwhile, the server keeps what was charged and records the difference on the order.
+- **Installing:** tills, kitchen screens and pickup boards can be installed as an app (Chrome: Install). The service worker (`app/sw.ts`, built by Serwist) keeps the app's files, so a till that has been opened once can be reloaded offline. It runs in production builds only.
+
 ### Receipts, kitchen tickets and the cash drawer
 
 The till prints through the browser (`lib/printing.ts`): receipts after a sale when `receipt.auto_print` is on (or with **Print receipt**), **Reprint last receipt** (marked COPY), and kitchen tickets when `print.kitchen_tickets` is on, for kitchens without a screen. To set up a till's printer:
