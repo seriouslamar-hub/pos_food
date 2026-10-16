@@ -210,19 +210,24 @@ export async function signIn(
   await page.getByRole("button", { name: "Sign in" }).click();
 }
 
-/** Signs in as the manager and turns this browser into the seeded till. */
-export async function setUpTill(page: Page) {
+/** Signs in as the manager and turns this browser into a seeded device. */
+export async function setUpDevice(page: Page, deviceName: string) {
   await signIn(page, SEED.manager.email);
   await expect(page).toHaveURL(/\/manager$/);
   await open(page, "/device/setup");
-  const tillButton = page.getByRole("button", {
-    name: new RegExp(`^${SEED.tillName}`),
+  const button = page.getByRole("button", {
+    name: new RegExp(`^${deviceName}`),
   });
-  await tillButton.click();
-  await expect(tillButton).toHaveAttribute("aria-pressed", "true");
+  await button.click();
+  await expect(button).toHaveAttribute("aria-pressed", "true");
   await page
-    .getByRole("button", { name: `Set up this browser as ${SEED.tillName}` })
+    .getByRole("button", { name: `Set up this browser as ${deviceName}` })
     .click();
+}
+
+/** Turns this browser into the seeded till, at its PIN screen. */
+export async function setUpTill(page: Page) {
+  await setUpDevice(page, SEED.tillName);
   await expect(page).toHaveURL(/\/till$/);
   await expect(
     page.getByRole("heading", { name: "Enter your PIN" }),

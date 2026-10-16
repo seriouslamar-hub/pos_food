@@ -149,6 +149,27 @@ export const SETTINGS: SettingDefinition[] = [
     fallback: { currency: "", values: [] },
   },
   {
+    key: "kds.sound",
+    label: "Kitchen screens beep for new tickets and voids",
+    kind: "boolean",
+    fallback: true,
+  },
+  {
+    key: "pickup.ready_minutes",
+    label: "Pickup board shows ready orders for (minutes)",
+    help: "Or until the till marks them collected.",
+    kind: "integer",
+    min: 1,
+    max: 60,
+    fallback: 10,
+  },
+  {
+    key: "pickup.chime",
+    label: "Pickup board chimes when an order is ready",
+    kind: "boolean",
+    fallback: true,
+  },
+  {
     key: "kds.ticket_warn_minutes",
     label: "Kitchen tickets turn amber after (minutes)",
     kind: "integer",

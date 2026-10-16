@@ -794,6 +794,7 @@ export type Database = {
         Row: {
           approved_by: string | null
           branch_id: string
+          bumped_at: string | null
           combo_slot_name: string | null
           created_at: string
           discount: Json | null
@@ -828,6 +829,7 @@ export type Database = {
         Insert: {
           approved_by?: string | null
           branch_id: string
+          bumped_at?: string | null
           combo_slot_name?: string | null
           created_at?: string
           discount?: Json | null
@@ -862,6 +864,7 @@ export type Database = {
         Update: {
           approved_by?: string | null
           branch_id?: string
+          bumped_at?: string | null
           combo_slot_name?: string | null
           created_at?: string
           discount?: Json | null
@@ -1781,6 +1784,7 @@ export type Database = {
         Args: { p_branch_id: string; p_key: string }
         Returns: Json
       }
+      bump_items: { Args: { p_item_ids: string[] }; Returns: Json }
       business_day_summary: { Args: { p_day_id: string }; Returns: Json }
       can_access_branch: { Args: { p_branch_id: string }; Returns: boolean }
       close_business_day: {
@@ -1901,6 +1905,10 @@ export type Database = {
       }
       list_open_shifts: { Args: { p_session_id: string }; Returns: Json }
       load_sample_menu: { Args: never; Returns: undefined }
+      mark_order_collected: {
+        Args: { p_order_id: string; p_session_id: string }
+        Returns: Json
+      }
       open_business_day: {
         Args: {
           p_branch_id?: string
@@ -1936,6 +1944,7 @@ export type Database = {
       }
       order_summary: { Args: { p_order_id: string }; Returns: Json }
       pin_lockout_seconds: { Args: { p_device_id: string }; Returns: number }
+      recall_items: { Args: { p_item_ids: string[] }; Returns: undefined }
       record_cash_movement: {
         Args: { p_movement: Json; p_session_id: string }
         Returns: Json
@@ -1955,6 +1964,10 @@ export type Database = {
         Args: { p_order_id: string; p_payments: Json; p_session_id: string }
         Returns: Json
       }
+      refresh_kitchen_status: {
+        Args: { p_order_ids: string[] }
+        Returns: undefined
+      }
       refund_order: {
         Args: { p_refund: Json; p_session_id: string }
         Returns: Json
@@ -1966,6 +1979,30 @@ export type Database = {
       report_exceptions: {
         Args: { p_branch_id: string; p_from: string; p_to: string }
         Returns: Json
+      }
+      require_kitchen_device: {
+        Args: never
+        Returns: {
+          auth_user_id: string | null
+          branch_id: string
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_seen_at: string | null
+          name: string
+          pending_sync: number | null
+          pending_sync_at: string | null
+          station: string | null
+          type: Database["public"]["Enums"]["device_type"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "devices"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       require_open_shift: {
         Args: { p_device_id: string; p_staff_id: string }

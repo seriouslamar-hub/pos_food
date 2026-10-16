@@ -64,6 +64,7 @@ select is(
     order by 1
   ),
   array[
+    'bump_items',
     'can_access_branch',
     'close_business_day',
     'close_shift',
@@ -83,9 +84,11 @@ select is(
     'is_manager',
     'list_open_shifts',
     'load_sample_menu',
+    'mark_order_collected',
     'open_business_day',
     'open_shift',
     'order_audit_trail',
+    'recall_items',
     'record_cash_movement',
     'record_offline_override',
     'record_payments',

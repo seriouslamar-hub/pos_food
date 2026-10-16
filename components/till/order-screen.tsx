@@ -54,6 +54,7 @@ import { localOrderSummary } from "@/lib/offline/local-order";
 import { CartPanel } from "./cart-panel";
 import { CashActions } from "./cash-actions";
 import { LineOptionsDialog, OrderDiscountDialog } from "./discount-dialogs";
+import { KitchenOrders } from "./kitchen-orders";
 import { OrderLookup } from "./order-lookup";
 import { ItemSheet } from "./item-sheet";
 import { MenuGrid } from "./menu-grid";
@@ -686,6 +687,7 @@ export function OrderScreen({
     <div className="flex min-h-0 flex-1">
       <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 p-3">
         <div className="flex flex-wrap items-center justify-end gap-2">
+          <KitchenOrders branchId={branchId} disabled={offline} />
           <OrderLookup
             branchId={branchId}
             currency={menu.currency_code}

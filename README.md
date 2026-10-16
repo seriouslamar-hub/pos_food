@@ -161,6 +161,12 @@ A till keeps selling when the internet drops, and sends everything once the conn
 - **Prices:** an offline sale is charged at the till's prices. If the menu changed meanwhile, the server keeps what was charged and records the difference on the order.
 - **Installing:** tills, kitchen screens and pickup boards can be installed as an app (Chrome: Install). The service worker (`app/sw.ts`, built by Serwist) keeps the app's files, so a till that has been opened once can be reloaded offline. It runs in production builds only.
 
+### Kitchen display and pickup board
+
+- **Kitchen display** (`/kds`, a device of type KDS): live tickets for the screen's station (the device's _Kitchen station_, or `?station=Grill`), or every station when it has none. Items with no station show on every screen. Tickets turn amber and red at `kds.ticket_warn_minutes` and `kds.ticket_late_minutes`. Tap an item, or **Done** for the whole ticket, to bump it; a bump bar's keys 1–9 bump tickets in order and 0 recalls the last one; **Recall** brings back any of the last ten. Voided lines show struck through with an alert until a cook acknowledges them. New tickets and voids beep (`kds.sound`; Chrome needs a first tap, or `--autoplay-policy=no-user-gesture-required` on an unattended screen).
+- A meal is ready when all its parts are; an order is ready when nothing is left to make. **Pickup board** (`/pickup`): order numbers being made and ready, ready ones for `pickup.ready_minutes` or until collected, with a chime (`pickup.chime`).
+- On the till, **Ready (n)** lists orders waiting at the counter and those still being made; tap **Collected** when the customer has their food. Orders keep `sent_to_kitchen_at`, `ready_at` and `collected_at` for speed-of-service reports.
+
 ### Receipts, kitchen tickets and the cash drawer
 
 The till prints through the browser (`lib/printing.ts`): receipts after a sale when `receipt.auto_print` is on (or with **Print receipt**), **Reprint last receipt** (marked COPY), and kitchen tickets when `print.kitchen_tickets` is on, for kitchens without a screen. To set up a till's printer:
