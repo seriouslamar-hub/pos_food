@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CustomerMenu } from "@/components/order/customer-menu";
+import { PaymentChoice } from "@/components/order/payment-choice";
 import { Button } from "@/components/ui/button";
 import { emptyCart, type Cart } from "@/lib/cart";
 import { parseMenu, type MenuDoc } from "@/lib/menu";
@@ -37,6 +38,7 @@ export function KioskApp({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [placed, setPlaced] = useState<Placed | null>(null);
+  const [payBy, setPayBy] = useState<string | null>(null);
   const lastTap = useRef(0);
 
   useEffect(() => {
@@ -52,6 +54,7 @@ export function KioskApp({
   function startOver() {
     setCart(emptyCart(crypto.randomUUID()));
     setPlaced(null);
+    setPayBy(null);
     setError(null);
     setBusy(false);
     setScreen("welcome");
@@ -81,6 +84,7 @@ export function KioskApp({
       p_order: {
         id: cart.id,
         order_type: orderType,
+        payment_preference: payBy,
         lines: cart.lines.map((l) => ({
           id: l.id,
           menu_item_id: l.menuItemId,
@@ -138,7 +142,7 @@ export function KioskApp({
       <main className="flex h-dvh flex-col items-center justify-center gap-10 p-8 text-center">
         <h1 className="text-5xl font-bold">{menu?.branch_name ?? "Welcome"}</h1>
         <p className="text-2xl text-muted-foreground">
-          Order here and pay at the counter{cardPayments ? " or by card" : ""}.
+          Order here, then pay at the counter by cash, card or mobile money.
         </p>
         <div className="flex flex-col gap-4 sm:flex-row">
           {(["takeaway", "dine_in"] as const).map((type) => (
@@ -175,7 +179,11 @@ export function KioskApp({
         <p className="text-3xl">
           Please pay{" "}
           {menu ? formatAmount(placed.total, menu.currency_code) : ""} at the
-          counter.
+          counter
+          {payBy && menu
+            ? ` by ${(menu.payment_methods.find((m) => m.type === payBy)?.name ?? payBy).toLowerCase()}`
+            : ""}
+          .
         </p>
         {error ? <p className="text-xl text-destructive">{error}</p> : null}
         <Button className="h-20 min-w-64 text-2xl" onClick={startOver}>
@@ -216,15 +224,28 @@ export function KioskApp({
           large
           checkout={(totals) => (
             <div className="flex flex-col gap-3">
+              <PaymentChoice
+                methods={menu.payment_methods}
+                value={payBy}
+                onChange={setPayBy}
+                large
+              />
               {error ? <p className="text-destructive">{error}</p> : null}
               <Button
                 className="h-20 text-2xl"
                 disabled={
-                  busy || cart.lines.length === 0 || totals.problems.length > 0
+                  busy ||
+                  cart.lines.length === 0 ||
+                  totals.problems.length > 0 ||
+                  !payBy
                 }
                 onClick={() => void place(false)}
               >
-                {busy ? "Sending…" : "Pay at the counter"}
+                {busy
+                  ? "Sending…"
+                  : payBy
+                    ? "Send my order"
+                    : "Choose how you'll pay"}
               </Button>
               {cardPayments ? (
                 <Button
@@ -237,7 +258,7 @@ export function KioskApp({
                   }
                   onClick={() => void place(true)}
                 >
-                  Pay by card
+                  Pay by card here
                 </Button>
               ) : null}
             </div>

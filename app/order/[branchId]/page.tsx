@@ -38,11 +38,8 @@ async function BranchMenu(props: PageProps<"/order/[branchId]">) {
       pay_at_counter: boolean;
     };
   };
-  const menu = parseMenu({
-    ...(data as object),
-    payment_methods: [],
-    stations: [],
-  });
+  // The branch's payment methods come only as choices (paid at the counter).
+  const menu = parseMenu({ stations: [], ...(data as object) });
   return (
     <OnlineOrderApp
       menu={menu}

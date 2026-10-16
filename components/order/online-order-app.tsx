@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CustomerMenu } from "@/components/order/customer-menu";
+import { PaymentChoice } from "@/components/order/payment-choice";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +54,7 @@ export function OnlineOrderApp({
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
   const [verifiedPhone, setVerifiedPhone] = useState<string | null>(null);
+  const [payBy, setPayBy] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const accepting = online.day_open && !online.paused;
@@ -125,6 +127,7 @@ export function OnlineOrderApp({
         id: cart.id,
         pickup_at: pickup,
         pay_at_counter: payAtCounter,
+        payment_preference: payAtCounter ? payBy : null,
         lines: cart.lines.map((l) => ({
           id: l.id,
           menu_item_id: l.menuItemId,
@@ -288,6 +291,13 @@ export function OnlineOrderApp({
               </Button>
             ) : null}
             {online.pay_at_counter ? (
+              <PaymentChoice
+                methods={menu.payment_methods}
+                value={payBy}
+                onChange={setPayBy}
+              />
+            ) : null}
+            {online.pay_at_counter ? (
               <Button
                 size="lg"
                 variant={payOnline ? "outline" : "default"}
@@ -297,16 +307,17 @@ export function OnlineOrderApp({
                   !accepting ||
                   !verifiedPhone ||
                   cart.lines.length === 0 ||
-                  totals.problems.length > 0
+                  totals.problems.length > 0 ||
+                  !payBy
                 }
                 onClick={() => void place(true)}
               >
-                Pay when I collect
+                Place order, pay when I collect
               </Button>
             ) : null}
             {!payOnline && !online.pay_at_counter ? (
               <p className="text-sm text-muted-foreground">
-                Online payment isn&apos;t set up at this branch yet.
+                This branch isn&apos;t taking online orders paid at the counter.
               </p>
             ) : null}
             <p className="text-xs text-muted-foreground">

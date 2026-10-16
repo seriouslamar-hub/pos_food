@@ -877,6 +877,7 @@ export function OrderScreen({
           }
           total={checkout.total}
           currency={menu.currency_code}
+          preferredMethod={checkout.order?.payment_preference}
           methods={
             offline
               ? menu.payment_methods

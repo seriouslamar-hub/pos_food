@@ -127,6 +127,8 @@ export type OrderSummary = {
   refunded_total: number;
   /** Sold in training mode: not a real sale. */
   training?: boolean;
+  /** Kiosk and online orders: how the customer said they'd pay. */
+  payment_preference?: "cash" | "card" | "mobile_money" | "other" | null;
   promotion_total?: number;
   coupon_code?: string | null;
   promotions?: { id: string; name: string; amount: number }[];

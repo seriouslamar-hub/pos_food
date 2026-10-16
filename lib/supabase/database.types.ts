@@ -1325,6 +1325,9 @@ export type Database = {
           order_type: Database["public"]["Enums"]["order_type"]
           paid_at: string | null
           pay_at_counter: boolean
+          payment_preference:
+            | Database["public"]["Enums"]["payment_method_type"]
+            | null
           pickup_at: string | null
           pos_session_id: string | null
           promotion_total: number
@@ -1365,6 +1368,9 @@ export type Database = {
           order_type?: Database["public"]["Enums"]["order_type"]
           paid_at?: string | null
           pay_at_counter?: boolean
+          payment_preference?:
+            | Database["public"]["Enums"]["payment_method_type"]
+            | null
           pickup_at?: string | null
           pos_session_id?: string | null
           promotion_total?: number
@@ -1405,6 +1411,9 @@ export type Database = {
           order_type?: Database["public"]["Enums"]["order_type"]
           paid_at?: string | null
           pay_at_counter?: boolean
+          payment_preference?:
+            | Database["public"]["Enums"]["payment_method_type"]
+            | null
           pickup_at?: string | null
           pos_session_id?: string | null
           promotion_total?: number
@@ -2927,6 +2936,10 @@ export type Database = {
       order_promo_lines: { Args: { p_order_id: string }; Returns: Json }
       order_summary: { Args: { p_order_id: string }; Returns: Json }
       order_summary_core: { Args: { p_order_id: string }; Returns: Json }
+      payment_choice: {
+        Args: { p_branch_id: string; p_choice: string }
+        Returns: Database["public"]["Enums"]["payment_method_type"]
+      }
       pin_lockout_seconds: { Args: { p_device_id: string }; Returns: number }
       place_online_order: {
         Args: { p_branch_id: string; p_order: Json }

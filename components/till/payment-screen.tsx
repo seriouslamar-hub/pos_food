@@ -43,6 +43,7 @@ export function PaymentScreen({
   newId,
   onBack,
   onComplete,
+  preferredMethod,
 }: {
   title: string;
   total: number;
@@ -54,10 +55,17 @@ export function PaymentScreen({
   newId: () => string;
   onBack: () => void;
   onComplete: (payments: PendingPayment[]) => void;
+  /** How a kiosk or online customer said they'd pay: picked first. */
+  preferredMethod?: string | null;
 }) {
   const [payments, setPayments] = useState<PendingPayment[]>([]);
   const [methodId, setMethodId] = useState(
-    () => (methods.find((m) => m.type === "cash") ?? methods[0])?.id ?? "",
+    () =>
+      (
+        methods.find((m) => m.type === preferredMethod) ??
+        methods.find((m) => m.type === "cash") ??
+        methods[0]
+      )?.id ?? "",
   );
   const [digits, setDigits] = useState("");
   const [reference, setReference] = useState("");

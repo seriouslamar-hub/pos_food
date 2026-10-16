@@ -204,15 +204,13 @@ The till prints through the browser (`lib/printing.ts`): receipts after a sale w
   - or they pay by card when online payment is set up
 - **Online ordering** (`/order`, public; switch on with `online.enabled`):
   - customers choose a branch, build their order (the public menu shows only what's on sale), pick a pickup time (from `online.prep_minutes`) and verify their mobile number with a texted code
-  - they pay online, or at the counter where `online.pay_at_counter` allows
+  - they choose how they'll pay and pay when they collect (`online.pay_at_counter`, on by default)
   - `/order/track/<id>` follows the order until it's collected
   - managers can **pause** online orders from **Availability**
-- **Unpaid orders never reach the kitchen.** Kiosk and online orders go to the kitchen only when they're paid: at the till, or when the payment provider's signed webhook confirms the payment for the exact amount (`confirm_online_payment`, server only, safe to repeat).
-- **Payments:**
-  - `PAYMENTS_PROVIDER=paystack` with `PAYSTACK_SECRET_KEY` (cards and mobile money) in Vercel; set the Paystack webhook to `https://<app>/api/payments/webhook/paystack`
-  - `PAYMENTS_PROVIDER=test` gives a pretend checkout (local stack only)
-  - online payments count on the order's business day in the Z report and reports
-- **Phone codes:** Supabase sends them through its SMS provider. Turn on **Authentication → Providers → Phone** with Twilio, MessageBird, Vonage or Textlocal. Sign-ups stay off: the app's server creates a customer's phone login just before texting the code (`/api/online/phone`, rate limited). Locally, `+233240000001` and `+233240000002` sign in with `123456`.
+- **Unpaid orders never reach the kitchen.** Kiosk and online orders go there only once they're paid at the till (or, if the optional gateway is on, once its signed webhook confirms the exact amount).
+- **Payments are taken at the counter, like any till sale.** No payment gateway is needed. At the kiosk or online, the customer chooses how they'll pay (cash, card or mobile money, from the branch's payment methods). The order waits under the till's **Unpaid orders** marked with that choice, and the payment screen opens on it. Once paid, the order goes to the kitchen, and online payments count in the Z report like any other.
+  - **Optional, off:** paying online with a gateway is built in but switched off. Turn it on with `PAYMENTS_PROVIDER=paystack` and `PAYSTACK_SECRET_KEY`, and set the Paystack webhook to `https://<app>/api/payments/webhook/paystack`.
+- **Phone codes:** sent through **Arkesel**. Supabase's Send SMS hook calls `/api/auth/sms-hook` (signed with `SMS_HOOK_SECRET`), which texts the code using `ARKESEL_API_KEY` and `ARKESEL_SENDER_ID`. Sign-ups stay off: the app's server creates a customer's phone login just before texting the code (`/api/online/phone`, rate limited). Locally, `+233240000001` and `+233240000002` sign in with `123456`.
 
 ## Launch readiness (Phase 14)
 

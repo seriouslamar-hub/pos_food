@@ -69,7 +69,7 @@ test.describe("kiosk and online ordering", () => {
     await resetTill();
   });
 
-  test("an online order paid online goes to the kitchen; one to pay at the counter waits", async ({
+  test("an online order waits, unpaid, until it's paid at the counter by the customer's chosen method", async ({
     browser,
   }) => {
     const customer = await (await browser.newContext()).newPage();
@@ -82,55 +82,38 @@ test.describe("kiosk and online ordering", () => {
     await customer.getByRole("button", { name: /^Water,/ }).click();
     await expect(customer.getByTestId("customer-total")).toHaveText("$5.50");
     await verifyPhone(customer);
-
-    // Pay now: the test provider stands in for the real one.
-    await customer.getByRole("button", { name: "Pay now" }).click();
-    await expect(customer).toHaveURL(/\/order\/test-pay\?/);
-    await customer.getByRole("button", { name: "Pay $5.50" }).click();
-    await expect(customer.getByTestId("tracked-state")).toHaveText(
-      "Paid. The kitchen is making it.",
+    // No payment gateway: there's no "Pay now", only how they'll pay at the counter.
+    await expect(customer.getByRole("button", { name: "Pay now" })).toHaveCount(
+      0,
     );
-    // Back through /order/return to the order's page.
-    const paidId = decodeURIComponent(customer.url()).match(
-      /track\/([0-9a-f-]{36})/,
-    )![1];
-    expect(await order(paidId)).toMatchObject({
-      channel: "online",
-      status: "paid",
-      total: 550,
+    const place = customer.getByRole("button", {
+      name: "Place order, pay when I collect",
     });
-    expect((await order(paidId)).sent_to_kitchen_at).not.toBeNull();
-
-    // A second order, paid at the counter: unpaid, so not in the kitchen.
-    await open(customer, `/order/${SEED.branchId}`);
-    await customer.getByRole("tab", { name: "Drinks" }).click();
-    await customer.getByRole("button", { name: /^Water,/ }).click();
-    await customer.getByRole("button", { name: "Pay when I collect" }).click();
+    await expect(place).toBeDisabled();
+    await customer.getByRole("radio", { name: "Mobile money" }).click();
+    await place.click();
     await expect(customer.getByTestId("tracked-state")).toHaveText(
       /pay when you collect/,
     );
-    const counterId = customer.url().split("/").pop()!;
-    const counter = await order(counterId);
-    expect(counter).toMatchObject({
+    const orderId = customer.url().split("/").pop()!;
+    const placed = await order(orderId);
+    expect(placed).toMatchObject({
       channel: "online",
       paid_at: null,
       sent_to_kitchen_at: null,
       pay_at_counter: true,
     });
 
-    // The kitchen shows the paid one, not the unpaid one.
+    // Not in the kitchen while unpaid.
     const kds = await (await browser.newContext()).newPage();
     await setUpDevice(kds, "Kitchen display");
     await expect(kds).toHaveURL(/\/kds$/);
-    const paidNumber = (await order(paidId)).order_number;
     await expect(
-      kds.getByRole("article", { name: `Order ${paidNumber}` }),
-    ).toContainText("Online");
-    await expect(
-      kds.getByRole("article", { name: `Order ${counter.order_number}` }),
+      kds.getByRole("article", { name: `Order ${placed.order_number}` }),
     ).toHaveCount(0);
 
-    // At the counter the cashier finds it under Unpaid orders and takes cash.
+    // At the counter: Unpaid orders says how they'll pay, and the payment
+    // screen opens on that method.
     const till = await (await browser.newContext()).newPage();
     await setUpTill(till);
     await enterPin(till, SEED.cashier.pin);
@@ -138,22 +121,29 @@ test.describe("kiosk and online ordering", () => {
     const unpaid = till.getByRole("dialog", { name: "Unpaid orders" });
     const row = unpaid
       .getByTestId("unpaid-order")
-      .filter({ hasText: `Order ${counter.order_number}` });
+      .filter({ hasText: `Order ${placed.order_number}` });
     await expect(row).toContainText("Online");
+    await expect(row).toContainText("will pay by mobile money");
     await row.getByRole("button", { name: "Take $5.50" }).click();
-    await till
-      .getByRole("dialog", { name: "Take payment" })
-      .getByRole("button", { name: /^Exact / })
+    const payment = till.getByRole("dialog", { name: "Take payment" });
+    await expect(
+      payment.getByRole("radio", { name: "Mobile money" }),
+    ).toHaveAttribute("aria-checked", "true");
+    await payment.getByRole("textbox", { name: "Reference" }).fill("MOMO-77");
+    await payment
+      .getByRole("button", { name: "Pay $5.50 by Mobile money" })
       .click();
     await expect(
       till.getByRole("dialog", { name: "Sale complete" }),
     ).toBeVisible();
+
+    // Paid: now it goes to the kitchen, and the customer sees it.
     await expect
-      .poll(async () => (await order(counterId)).sent_to_kitchen_at)
+      .poll(async () => (await order(orderId)).sent_to_kitchen_at)
       .not.toBeNull();
     await expect(
-      kds.getByRole("article", { name: `Order ${counter.order_number}` }),
-    ).toBeVisible();
+      kds.getByRole("article", { name: `Order ${placed.order_number}` }),
+    ).toContainText("Online");
     await expect(customer.getByTestId("tracked-state")).toHaveText(
       "Paid. The kitchen is making it.",
       {
@@ -198,19 +188,24 @@ test.describe("kiosk and online ordering", () => {
     );
 
     await page.getByRole("button", { name: "Larger text" }).click();
-    await page.getByRole("button", { name: "Pay at the counter" }).click();
+    await page.getByRole("radio", { name: "Cash" }).click();
+    await page.getByRole("button", { name: "Send my order" }).click();
+    await expect(page.getByTestId("kiosk-done")).toContainText("by cash");
     const number = (await page
       .getByTestId("kiosk-order-number")
       .textContent())!;
     const { data: placed } = await db
       .from("orders")
-      .select("channel, paid_at, sent_to_kitchen_at, pay_at_counter, total")
+      .select(
+        "channel, paid_at, sent_to_kitchen_at, pay_at_counter, total, payment_preference",
+      )
       .eq("branch_id", SEED.branchId)
       .eq("order_number", number)
       .order("created_at", { ascending: false })
       .limit(1)
       .single();
     expect(placed).toMatchObject({
+      payment_preference: "cash",
       channel: "kiosk",
       paid_at: null,
       sent_to_kitchen_at: null,
@@ -224,7 +219,7 @@ test.describe("kiosk and online ordering", () => {
   test("reports show online sales by channel; pausing tells customers", async ({
     page,
   }) => {
-    // The earlier tests' online orders, paid online and at the counter.
+    // The earlier test's online order, paid at the counter.
     await signIn(page, SEED.manager.email);
     await expect(page).toHaveURL(/\/manager$/);
     const { data: day } = await localAdmin()
@@ -249,7 +244,7 @@ test.describe("kiosk and online ordering", () => {
       page.getByText("We've paused online orders for a moment."),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Pay when I collect" }),
+      page.getByRole("button", { name: "Place order, pay when I collect" }),
     ).toBeDisabled();
   });
 });

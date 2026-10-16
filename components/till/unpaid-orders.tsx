@@ -15,12 +15,20 @@ import { formatAmount } from "@/lib/money";
 import { ORDER_TYPE_LABELS, type OrderSummary } from "@/lib/orders";
 import { createClient } from "@/lib/supabase/client";
 
+const PAY_LABELS: Record<string, string> = {
+  cash: "cash",
+  card: "card",
+  mobile_money: "mobile money",
+  other: "other",
+};
+
 type UnpaidOrder = Pick<
   OrderSummary,
   | "id"
   | "order_number"
   | "order_type"
   | "channel"
+  | "payment_preference"
   | "total"
   | "created_at"
   | "sent_to_kitchen_at"
@@ -56,7 +64,7 @@ export function UnpaidOrders({
     const { data, error: loadError } = await supabase
       .from("orders")
       .select(
-        "id, order_number, order_type, channel, total, created_at, sent_to_kitchen_at",
+        "id, order_number, order_type, channel, total, created_at, sent_to_kitchen_at, payment_preference",
       )
       .eq("branch_id", branchId)
       .is("paid_at", null)
@@ -130,6 +138,9 @@ export function UnpaidOrders({
                       {formatInZone(o.created_at, timezone, {
                         timeStyle: "short",
                       })}
+                      {o.payment_preference
+                        ? ` · will pay by ${PAY_LABELS[o.payment_preference] ?? o.payment_preference}`
+                        : ""}
                     </span>
                   </span>
                   <Button

@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(24);
+select plan(26);
 
 create function pg_temp.login_as(p_auth_user_id uuid, p_phone text default null)
 returns void
@@ -72,6 +72,15 @@ select is((select sent_to_kitchen_at from public.orders where id = 'f6000000-000
   'and doesn''t reach the kitchen yet');
 select is((select pay_at_counter from public.orders where id = 'f6000000-0000-4000-8000-000000000e01'), true,
   'it''s paid at the counter');
+select pg_temp.login_as('f0000000-0000-4000-8000-000000000e01');
+insert into r values ('kiosk2', public.submit_kiosk_order(pg_temp.order_json('f6000000-0000-4000-8000-000000000e09',
+  '{"payment_preference": "card"}')));
+insert into r values ('kiosk3', public.submit_kiosk_order(pg_temp.order_json('f6000000-0000-4000-8000-000000000e08',
+  '{"payment_preference": "bitcoin"}')));
+reset role;
+select is(
+  array[(select result ->> 'payment_preference' from r where step = 'kiosk2'), (select result ->> 'payment_preference' from r where step = 'kiosk3')],
+  array['card', null], 'the customer''s choice of payment is kept (only methods the branch takes)');
 select pg_temp.login_as('f0000000-0000-4000-8000-000000000e02');
 select throws_ok($$select public.submit_kiosk_order(pg_temp.order_json(gen_random_uuid()::text))$$, '42501', null,
   'a till can''t place kiosk orders');
@@ -84,8 +93,10 @@ select is(
   (select array_agg(b ->> 'name') from jsonb_array_elements(public.list_online_branches()) b),
   array['Online Branch'], 'anyone sees the branches taking online orders (only those)'
 );
-select is((public.get_public_menu('f1000000-0000-4000-8000-000000000e0a') ? 'payment_methods'), false,
-  'the public menu leaves out payment methods');
+select is(
+  (select array_agg(k order by k) from jsonb_array_elements(public.get_public_menu('f1000000-0000-4000-8000-000000000e0a') -> 'payment_methods') m,
+     jsonb_object_keys(m) k where m ->> 'type' = 'cash'),
+  array['id', 'name', 'type'], 'the public menu lists payment methods only as choices (no settings)');
 select ok(jsonb_array_length(public.get_public_menu('f1000000-0000-4000-8000-000000000e0a') -> 'items') >= 1,
   'and shows the items');
 select throws_ok($$select public.get_public_menu('f1000000-0000-4000-8000-000000000e0b')$$, 'P0002', null,
@@ -119,9 +130,20 @@ select is(
 select pg_temp.login_as('f0000000-0000-4000-8000-000000000e04', '233200000002');
 select throws_ok($$select public.get_online_order('f6000000-0000-4000-8000-000000000e02')$$, 'P0002', null,
   'another customer can''t see it');
+reset role;
+insert into public.settings (branch_id, key, value) values ('f1000000-0000-4000-8000-000000000e0a', 'online.pay_at_counter', 'false');
+select pg_temp.login_as('f0000000-0000-4000-8000-000000000e04', '233200000002');
 select throws_ok($$select public.place_online_order('f1000000-0000-4000-8000-000000000e0a',
     pg_temp.order_json(gen_random_uuid()::text, jsonb_build_object('pickup_at', now() + interval '30 minutes', 'pay_at_counter', true)))$$,
   '22023', null, 'paying at the counter only where the branch allows it');
+reset role;
+delete from public.settings where branch_id = 'f1000000-0000-4000-8000-000000000e0a' and key = 'online.pay_at_counter';
+select pg_temp.login_as('f0000000-0000-4000-8000-000000000e04', '233200000002');
+select is(
+  (public.place_online_order('f1000000-0000-4000-8000-000000000e0a', pg_temp.order_json(gen_random_uuid()::text,
+    jsonb_build_object('pickup_at', now() + interval '30 minutes', 'pay_at_counter', true, 'payment_preference', 'mobile_money')))
+   ->> 'payment_preference'),
+  'mobile_money', 'online orders are paid at the counter by default, with the customer''s choice of method');
 select throws_ok($$select public.confirm_online_payment('x', 1, 'GHS')$$, '42501', null,
   'customers can''t confirm payments themselves');
 reset role;
