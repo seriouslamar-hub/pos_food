@@ -52,3 +52,4 @@ next-env.d.ts
 
 # private: real credentials, never commit (repo is public)
 /docs/private/
+docs/user-guide/quick-start-guide.pdf
