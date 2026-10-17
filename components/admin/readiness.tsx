@@ -187,13 +187,9 @@ export async function Readiness() {
                   aria-label="To do"
                 />
               )}
-              <span className="flex flex-col">
+              <span className="flex flex-1 flex-col">
                 <span
-                  className={
-                    c.done
-                      ? "text-muted-foreground line-through"
-                      : "font-medium"
-                  }
+                  className={c.done ? "text-muted-foreground" : "font-medium"}
                 >
                   {c.label}
                 </span>
@@ -202,6 +198,15 @@ export async function Readiness() {
                     {c.detail}
                   </span>
                 )}
+              </span>
+              <span
+                className={
+                  c.done
+                    ? "shrink-0 rounded-full bg-foreground px-2.5 py-0.5 text-xs font-medium text-background"
+                    : "shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
+                }
+              >
+                {c.done ? "Done" : "To do"}
               </span>
             </Link>
           </li>
