@@ -109,24 +109,26 @@ export function MenuTile({
       aria-label={`${item.name}, ${price}${sellable ? "" : ", out of stock"}`}
       onClick={() => onSelect?.(item as MenuItem)}
       className={cn(
-        "flex min-h-28 flex-col justify-between gap-2 rounded-xl border-2 p-3 text-left transition-colors",
+        "flex min-h-28 flex-col justify-between gap-2 overflow-hidden rounded-xl border-2 p-2.5 text-left transition-colors",
         sellable
           ? "bg-card hover:border-foreground/30 active:bg-muted"
           : "cursor-not-allowed border-dashed bg-muted text-muted-foreground",
       )}
     >
-      <span className="flex items-start gap-2">
-        {item.image_url ? (
-          // Menu photos come from Supabase Storage; the host differs per environment.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={item.image_url}
-            alt=""
-            className="size-12 shrink-0 rounded-lg object-cover"
-          />
-        ) : null}
-        <span className="text-lg leading-tight font-semibold">{item.name}</span>
-      </span>
+      {item.image_url ? (
+        // Menu photos come from Supabase Storage; the host differs per environment.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={item.image_url}
+          alt=""
+          loading="lazy"
+          className={cn(
+            "aspect-[16/10] w-full shrink-0 rounded-lg object-cover",
+            !sellable && "opacity-50 grayscale",
+          )}
+        />
+      ) : null}
+      <span className="text-lg leading-tight font-semibold">{item.name}</span>
       <span className="flex items-center justify-between gap-2">
         <span className="text-base tabular-nums">{price}</span>
         {!sellable ? (
