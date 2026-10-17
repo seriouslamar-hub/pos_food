@@ -49,3 +49,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /playwright/.cache/
+
+# private: real credentials, never commit (repo is public)
+/docs/private/
